@@ -1,4 +1,5 @@
-const firebaseConfig = {
+
+  const firebaseConfig = {
     databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
   };
 
@@ -496,6 +497,7 @@ const firebaseConfig = {
     renderCustomers();
     renderCart();
     renderStats();
+    renderSalesHistory();
     initFirebaseSync();
   }
 
@@ -639,6 +641,7 @@ const firebaseConfig = {
         renderCustomers();
         renderCart();
         renderStats();
+        renderSalesHistory();
         isRemoteSync = false;
       }
     }, (error) => {
@@ -689,7 +692,7 @@ const firebaseConfig = {
       }
       inventory = []; customers = []; salesLog = []; cart = []; connectedStores = []; syncKey = '';
       currentUser = null;
-      saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats();
+      saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats(); renderSalesHistory();
       toggleResetLock(); toggleSidebar(false); checkAuthState();
       alert("✅ Store data has been completely reset.");
     }
@@ -717,7 +720,7 @@ const firebaseConfig = {
           if (data.shopPhone) shopPhone = data.shopPhone;
           if (data.receiptSerialCounter) receiptSerialCounter = data.receiptSerialCounter;
           inventory = data.inventory; customers = data.customers; salesLog = data.salesLog;
-          saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats(); renderConnectedStores();
+          saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats(); renderSalesHistory(); renderConnectedStores();
           alert("Data successfully imported!"); toggleSidebar(false);
         } else alert("Invalid backup file format.");
       } catch (err) { alert("Error parsing file: " + err.message); }
@@ -748,7 +751,7 @@ const firebaseConfig = {
     let items = inventory.filter(item => item.name.toLowerCase().includes(query));
     items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
-    if (items.length === 0) return grid.innerHTML = `<p style="font-size:0.85rem; grid-column: 1/-1;">No items found.</p>`;
+    if (items.length === 0) return grid.innerHTML = `<p style="font-size:0.85rem; grid-column: 1/-1; color: var(--text-muted);">No items found.</p>`;
 
     items.forEach(item => {
       const isUnlocked = !isDemo && !!unlockedCards[item.id];
@@ -756,253 +759,271 @@ const firebaseConfig = {
       const label = isUnlocked ? '🔓 Lock' : '🔒 Unlock';
       const css = isUnlocked ? 'btn-secondary' : 'btn-small';
 
+      let stockBadgeClass = 'badge-in';
+      let stockBadgeText = `${item.stock} in stock`;
+      if (item.stock === 0) {
+        stockBadgeClass = 'badge-out';
+        stockBadgeText = 'Out of Stock';
+      } else if (item.stock <= 5) {
+        stockBadgeClass = 'badge-low';
+        stockBadgeText = `${item.stock} Low Stock`;
+      }
+
       const el = document.createElement('div');
       el.className = 'product-card';
       el.innerHTML = `
         <div class="product-info" onclick="addToCart(${item.id})">
           <div class="product-name">${item.name}</div>
           <div class="product-price">${fmtCurr(item.price)}</div>
-          <div class="product-stock">
-            <span class="badge ${item.stock===0?'badge-out':item.stock<=5?'badge-low':'badge-in'}">
-              ${item.stock===0?'Sold Out':item.stock<=5?`Low (${item.stock})`:`Stock Bal: ${item.stock}`}
-            </span>
-          </div>
+          <div class="product-stock"><span class="badge ${stockBadgeClass}">${stockBadgeText}</span></div>
         </div>
         <div class="product-actions">
-          <button class="btn btn-small ${css}" onclick="demoGuard(() => toggleCardLock(${item.id}))" style="width: 100%; margin-bottom: 4px;">${isDemo ? '🔒 Locked (Demo)' : label}</button>
-          <button class="btn btn-small btn-warning" onclick="demoGuard(() => editProduct(${item.id}))" ${attr}>Edit</button>
-          <button class="btn btn-small btn-danger" onclick="demoGuard(() => removeProduct(${item.id}))" ${attr}>Delete</button>
+          <button class="btn btn-small ${css}" onclick="toggleCardLock(${item.id})">${label}</button>
+          <button class="btn btn-small btn-secondary" ${attr} onclick="editProduct(${item.id})">✏️ Edit</button>
+          <button class="btn btn-small btn-danger" ${attr} onclick="deleteProduct(${item.id})">🗑️ Delete</button>
         </div>
       `;
       grid.appendChild(el);
     });
   }
 
-  function saveProduct() {
-    if (isCurrentDemoAccount()) return demoGuard();
+  function addToCart(productId) {
+    const product = inventory.find(p => p.id === productId);
+    if (!product) return;
+    if (product.stock <= 0) return alert("❌ Item is out of stock!");
 
-    const id = document.getElementById('editProductId').value;
-    const name = document.getElementById('pName').value.trim();
-    const price = parseFloat(document.getElementById('pPrice').value);
-    const stock = parseInt(document.getElementById('pStock').value);
-
-    if (!name || isNaN(price) || isNaN(stock)) return alert('Fill out all item fields.');
-
-    const pinCheck = prompt("🔒 Admin PIN Verification Required:");
-    if (pinCheck === null) return;
-    if (pinCheck !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
-
-    if (id) {
-      const item = inventory.find(i => i.id == id);
-      if (item) { item.name = name; item.price = price; item.stock = stock; }
-    } else inventory.push({ id: Date.now(), name, price, stock });
-
-    saveData(); renderInventory(); resetForm();
-    alert("✅ Product saved!");
-  }
-
-  function editProduct(id) {
-    if (isCurrentDemoAccount()) return demoGuard();
-    if (!unlockedCards[id]) return;
-    const item = inventory.find(i => i.id === id);
-    if (!item) return;
-
-    document.getElementById('editProductId').value = item.id;
-    document.getElementById('pName').value = item.name;
-    document.getElementById('pPrice').value = item.price;
-    document.getElementById('pStock').value = item.stock;
-
-    document.getElementById('formTitle').innerText = '✏️ Edit Product';
-    document.getElementById('saveProductBtn').innerText = 'Update Item';
-    document.getElementById('cancelEditBtn').style.display = 'inline-block';
-  }
-
-  function removeProduct(id) {
-    if (isCurrentDemoAccount()) return demoGuard();
-    if (!unlockedCards[id]) return;
-    if (confirm("Remove this product?")) {
-      inventory = inventory.filter(i => i.id !== id);
-      cart = cart.filter(c => c.id !== id);
-      delete unlockedCards[id];
-      saveData(); renderInventory(); renderCart();
+    const existing = cart.find(c => c.id === productId);
+    if (existing) {
+      if (existing.qty + 1 > product.stock) {
+        return alert(`⚠️ Only ${product.stock} units available in stock.`);
+      }
+      existing.qty += 1;
+    } else {
+      cart.push({ id: product.id, name: product.name, price: product.price, qty: 1 });
     }
-  }
 
-  function resetForm() {
-    document.getElementById('editProductId').value = '';
-    document.getElementById('pName').value = '';
-    document.getElementById('pPrice').value = '';
-    document.getElementById('pStock').value = '';
-    document.getElementById('formTitle').innerText = '🔒➕ Add New Item';
-    document.getElementById('saveProductBtn').innerText = 'Add Item';
-    document.getElementById('cancelEditBtn').style.display = 'none';
-  }
-
-  function clearAllStock() {
-    if (isCurrentDemoAccount()) return demoGuard();
-
-    const pinCheck = prompt("🚨 Enter security code to confirm clearing ALL Product Stock:");
-    if (pinCheck === null) return;
-    if (pinCheck !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
-
-    if (confirm("Are you sure you want to clear all product stock?")) {
-      inventory = []; cart = []; unlockedCards = {};
-      saveData(); renderInventory(); renderCart();
-    }
-  }
-
-  function renderCustomers() {
-    const list = document.getElementById('custList'), select = document.getElementById('cartCustomer');
-    list.innerHTML = ''; select.innerHTML = '<option value="">Walk-in Customer</option>';
-    customers.forEach(c => {
-      list.innerHTML += `<li class="cust-item"><span><strong>${c.name}</strong> (${c.phone})</span></li>`;
-      select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-    });
-  }
-
-  function addCustomer() {
-    const name = document.getElementById('cName').value.trim(), phone = document.getElementById('cPhone').value.trim();
-    if (!name || !phone) return alert('Provide name and phone.');
-    customers.push({ id: Date.now(), name, phone });
-    saveData(); renderCustomers(); document.getElementById('cName').value = ''; document.getElementById('cPhone').value = '';
-  }
-
-  function addToCart(pId) {
-    const item = inventory.find(i => i.id === pId);
-    if (!item || item.stock <= 0) return alert('Item sold out!');
-    const inCart = cart.find(c => c.id === pId);
-    if (inCart) {
-      if (inCart.qty < item.stock) inCart.qty++; else alert('Max stock reached.');
-    } else cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
     renderCart();
   }
 
-  function clearCart() { 
-    cart = []; 
-    document.getElementById('cartAmountTendered').value = '';
-    renderCart(); 
+  function updateCartQty(productId, qtyChange) {
+    const itemIndex = cart.findIndex(c => c.id === productId);
+    if (itemIndex === -1) return;
+
+    const product = inventory.find(p => p.id === productId);
+    const newQty = cart[itemIndex].qty + qtyChange;
+
+    if (newQty <= 0) {
+      cart.splice(itemIndex, 1);
+    } else {
+      if (product && newQty > product.stock) {
+        return alert(`⚠️ Maximum stock limit reached (${product.stock}).`);
+      }
+      cart[itemIndex].qty = newQty;
+    }
+
+    renderCart();
+  }
+
+  function clearCart() {
+    cart = [];
+    renderCart();
   }
 
   function renderCart() {
     const list = document.getElementById('cartList');
     list.innerHTML = '';
-    if (cart.length === 0) { 
-      list.innerHTML = '<li>Tap products on the right to add to cart</li>'; 
-      renderCartSummary();
-      return; 
+
+    if (cart.length === 0) {
+      list.innerHTML = `<li style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:10px;">Cart is empty. Click a product to add.</li>`;
+    } else {
+      cart.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'cart-item';
+        li.innerHTML = `
+          <div>
+            <div style="font-weight:bold;">${item.name}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${fmtCurr(item.price)} x ${item.qty} = <strong>${fmtCurr(item.price * item.qty)}</strong></div>
+          </div>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <button class="btn btn-small btn-secondary" onclick="updateCartQty(${item.id}, -1)">-</button>
+            <span style="font-size:0.85rem; font-weight:bold; min-width:16px; text-align:center;">${item.qty}</span>
+            <button class="btn btn-small btn-secondary" onclick="updateCartQty(${item.id}, 1)">+</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
     }
 
-    cart.forEach(c => {
-      list.innerHTML += `<li class="cart-item"><span>${c.name} (x${c.qty})</span><span>${fmtCurr(c.price * c.qty)}</span></li>`;
-    });
     renderCartSummary();
   }
 
-  function renderCartSummary() {
-    let subtotal = 0;
-    cart.forEach(c => { subtotal += (c.price * c.qty); });
+  function getCartCalculations() {
+    const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+    const taxPercent = parseFloat(document.getElementById('cartTaxPercent')?.value) || 0;
+    const taxAmount = (subtotal * taxPercent) / 100;
+    const total = subtotal + taxAmount;
+    const tendered = parseFloat(document.getElementById('cartAmountTendered')?.value) || 0;
+    const change = Math.max(0, tendered - total);
 
-    const taxPercent = parseFloat(document.getElementById('cartTaxPercent').value) || 0;
-    const taxAmount = subtotal * (taxPercent / 100);
-    const grandTotal = subtotal + taxAmount;
-
-    const tenderedInput = document.getElementById('cartAmountTendered').value;
-    const tendered = parseFloat(tenderedInput) || 0;
-    const change = tendered > 0 ? (tendered - grandTotal) : 0;
-
-    document.getElementById('cartSubtotalDisplay').innerText = fmtCurr(subtotal);
-    document.getElementById('cartTaxAmountDisplay').innerText = fmtCurr(taxAmount);
-    document.getElementById('cartTotalDisplay').innerText = fmtCurr(grandTotal);
-
-    const changeEl = document.getElementById('cartChangeDisplay');
-    changeEl.innerText = fmtCurr(change >= 0 ? change : 0);
-    changeEl.style.color = change < 0 ? 'var(--danger)' : 'var(--warning)';
+    return { subtotal, taxPercent, taxAmount, total, tendered, change };
   }
 
-  function checkout() {
-    if (cart.length === 0) return alert('Cart is empty.');
-    
-    const custName = document.getElementById('cartCustomer').value || 'Walk-in Customer';
+  function renderCartSummary() {
+    const calcs = getCartCalculations();
 
-    let subtotal = 0;
-    cart.forEach(c => subtotal += (c.price * c.qty));
+    document.getElementById('cartSubtotalDisplay').innerText = fmtCurr(calcs.subtotal);
+    document.getElementById('cartTaxAmountDisplay').innerText = fmtCurr(calcs.taxAmount);
+    document.getElementById('cartTotalDisplay').innerText = fmtCurr(calcs.total);
+    document.getElementById('cartChangeDisplay').innerText = fmtCurr(calcs.change);
+  }
 
-    const taxPercent = parseFloat(document.getElementById('cartTaxPercent').value) || 0;
-    const taxAmount = subtotal * (taxPercent / 100);
-    const grandTotal = subtotal + taxAmount;
+  /* --- CHECKOUT CONFIRMATION PAGE LOGIC --- */
+  function openCheckoutConfirmation() {
+    if (cart.length === 0) return alert("⚠️ Your cart is empty! Add products to proceed.");
 
-    const tenderedInput = document.getElementById('cartAmountTendered').value;
-    const tendered = parseFloat(tenderedInput) || grandTotal;
-    const change = tendered - grandTotal;
-
-    if (tendered < grandTotal) {
-      if (!confirm(`⚠️ Tendered amount (${fmtCurr(tendered)}) is less than total (${fmtCurr(grandTotal)}).\nProceed anyway?`)) {
+    const calcs = getCartCalculations();
+    if (calcs.tendered > 0 && calcs.tendered < calcs.total) {
+      if (!confirm(`⚠️ Amount Tendered (${fmtCurr(calcs.tendered)}) is less than total amount (${fmtCurr(calcs.total)}). Proceed anyway?`)) {
         return;
       }
     }
 
-    let itemsCount = 0, receiptHTML = '', details = [];
+    const custSelect = document.getElementById('cartCustomer');
+    const customerName = custSelect.options[custSelect.selectedIndex]?.text || "Walk-in Customer";
 
-    cart.forEach(c => {
-      const invItem = inventory.find(i => i.id === c.id);
-      if (invItem) invItem.stock -= c.qty;
-      const lineTotal = c.price * c.qty;
-      itemsCount += c.qty;
-      details.push({ name: c.name, unitPrice: c.price, qty: c.qty, lineTotal });
-      receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px; color:#000;">
-        <span>${c.name} (x${c.qty})</span>
-        <span>${fmtCurr(lineTotal)}</span>
-      </div>`;
+    // Build Cart Summary Table inside confirmation modal
+    const detailsContainer = document.getElementById('confirmOrderDetails');
+    let itemsHTML = `<table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border); color:var(--text-muted); text-align:left;">
+          <th style="padding:4px 0;">Item</th>
+          <th style="text-align:center; padding:4px 0;">Qty</th>
+          <th style="text-align:right; padding:4px 0;">Price</th>
+          <th style="text-align:right; padding:4px 0;">Total</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    cart.forEach(item => {
+      itemsHTML += `
+        <tr style="border-bottom:1px solid #1e293b;">
+          <td style="padding:6px 0;">${item.name}</td>
+          <td style="text-align:center; padding:6px 0;">${item.qty}</td>
+          <td style="text-align:right; padding:6px 0;">${fmtCurr(item.price)}</td>
+          <td style="text-align:right; padding:6px 0; font-weight:bold;">${fmtCurr(item.price * item.qty)}</td>
+        </tr>
+      `;
+    });
+    itemsHTML += `</tbody></table>`;
+    detailsContainer.innerHTML = itemsHTML;
+
+    // Populate Modal Figures
+    document.getElementById('confirmCustomerName').innerText = customerName;
+    document.getElementById('confirmSubtotal').innerText = fmtCurr(calcs.subtotal);
+    document.getElementById('confirmTax').innerText = `${fmtCurr(calcs.taxAmount)} (${calcs.taxPercent}%)`;
+    document.getElementById('confirmTotal').innerText = fmtCurr(calcs.total);
+    document.getElementById('confirmTendered').innerText = calcs.tendered > 0 ? fmtCurr(calcs.tendered) : "Exact Cash / N/A";
+    document.getElementById('confirmChange').innerText = fmtCurr(calcs.change);
+
+    // Show Confirmation Modal
+    document.getElementById('checkoutConfirmModal').style.display = 'flex';
+  }
+
+  function closeCheckoutConfirmation() {
+    document.getElementById('checkoutConfirmModal').style.display = 'none';
+  }
+
+  function processCheckout() {
+    closeCheckoutConfirmation();
+
+    const calcs = getCartCalculations();
+    const custSelect = document.getElementById('cartCustomer');
+    const customerName = custSelect.options[custSelect.selectedIndex]?.text || "Walk-in Customer";
+
+    // Deduct stock
+    cart.forEach(cartItem => {
+      const invItem = inventory.find(i => i.id === cartItem.id);
+      if (invItem) invItem.stock = Math.max(0, invItem.stock - cartItem.qty);
     });
 
-    const txId = "TX-" + Date.now().toString().slice(-6);
-    const dateStr = new Date().toLocaleString();
-    const currentSerial = "RCP-" + receiptSerialCounter++;
+    // Create Sale Transaction Object
+    const receiptSerial = `REC-${receiptSerialCounter++}`;
+    const txnId = `TXN-${Date.now()}`;
+    const saleRecord = {
+      id: txnId,
+      serial: receiptSerial,
+      date: new Date().toLocaleString(),
+      dateISO: new Date().toISOString(),
+      customer: customerName,
+      items: [...cart],
+      subtotal: calcs.subtotal,
+      taxPercent: calcs.taxPercent,
+      taxAmount: calcs.taxAmount,
+      total: calcs.total,
+      tendered: calcs.tendered,
+      change: calcs.change
+    };
 
-    salesLog.unshift({
-      id: txId,
-      serial: currentSerial,
-      date: dateStr,
-      customer: custName,
-      itemsCount,
-      subtotal,
-      taxPercent,
-      taxAmount,
-      total: grandTotal,
-      tendered,
-      change: change >= 0 ? change : 0,
-      details
+    salesLog.unshift(saleRecord);
+    saveData();
+
+    // Render Receipt Modal
+    renderReceipt(saleRecord);
+
+    // Reset Cart & Inputs
+    cart = [];
+    document.getElementById('cartAmountTendered').value = '';
+    document.getElementById('cartTaxPercent').value = '0';
+    renderCart();
+    renderInventory();
+    renderStats();
+    renderSalesHistory();
+  }
+
+  function renderReceipt(sale) {
+    document.getElementById('rDate').innerText = `Date: ${sale.date}`;
+    document.getElementById('rCustomer').innerText = `Customer: ${sale.customer}`;
+    document.getElementById('rSerial').innerText = `Receipt #: ${sale.serial}`;
+    document.getElementById('rTransactionId').innerText = `Ref: ${sale.id}`;
+
+    const itemsBox = document.getElementById('rItems');
+    let html = `<table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+      <thead>
+        <tr style="border-bottom:1px solid #000; text-align:left;">
+          <th>Qty</th><th>Item</th><th style="text-align:right;">Amt</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    sale.items.forEach(i => {
+      html += `<tr>
+        <td style="vertical-align:top;">${i.qty}x</td>
+        <td>${i.name}</td>
+        <td style="text-align:right; vertical-align:top;">${(i.price * i.qty).toFixed(2)}</td>
+      </tr>`;
     });
+    html += `</tbody></table>`;
+    itemsBox.innerHTML = html;
 
-    saveData(); renderInventory(); renderStats();
+    document.getElementById('rSubtotal').innerText = sale.subtotal.toFixed(2);
+    document.getElementById('rTax').innerText = sale.taxAmount.toFixed(2);
+    document.getElementById('rTotal').innerText = sale.total.toFixed(2);
+    document.getElementById('rTendered').innerText = (sale.tendered || sale.total).toFixed(2);
+    document.getElementById('rChange').innerText = sale.change.toFixed(2);
 
-    // Populate Receipt View
-    document.getElementById('rStoreAddress').innerText = shopAddress;
-    document.getElementById('rStorePhone').innerText = `Tel: ${shopPhone}`;
-    document.getElementById('rDate').innerText = `Date: ${dateStr}`;
-    document.getElementById('rCustomer').innerText = `Customer: ${custName}`;
-    document.getElementById('rSerial').innerText = `Receipt #: ${currentSerial}`;
-    document.getElementById('rTransactionId').innerText = `Txn ID: ${txId}`;
-    document.getElementById('rItems').innerHTML = receiptHTML;
-    document.getElementById('rSubtotal').innerText = fmtCurr(subtotal);
-    document.getElementById('rTax').innerText = `${fmtCurr(taxAmount)} (${taxPercent}%)`;
-    document.getElementById('rTotal').innerText = fmtCurr(grandTotal);
-    document.getElementById('rTendered').innerText = fmtCurr(tendered);
-    document.getElementById('rChange').innerText = fmtCurr(change >= 0 ? change : 0);
-
+    // Generate Barcode
     try {
-      JsBarcode("#receiptBarcode", currentSerial, {
+      JsBarcode("#receiptBarcode", sale.serial, {
         format: "CODE128",
-        lineColor: "#000",
         width: 1.5,
         height: 35,
         displayValue: true,
-        fontSize: 10
+        fontSize: 10,
+        margin: 2
       });
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Barcode Error", e); }
 
     document.getElementById('receiptModal').style.display = 'flex';
-    clearCart();
   }
 
   function closeReceipt() {
@@ -1012,101 +1033,223 @@ const firebaseConfig = {
   function saveReceiptPDF() {
     const element = document.getElementById('receiptContainer');
     const opt = {
-      margin: 5,
-      filename: `Receipt_${Date.now()}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: [80, 200], orientation: 'portrait' }
+      margin:       0.2,
+      filename:     `Receipt_${document.getElementById('rSerial').innerText.replace(/[^a-zA-Z0-9_-]/g, '')}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(element).save();
   }
 
+  function addCustomer() {
+    const name = document.getElementById('cName').value.trim();
+    const phone = document.getElementById('cPhone').value.trim();
+
+    if (!name) return alert("Please enter customer name.");
+
+    customers.push({ id: Date.now(), name, phone: phone || 'N/A' });
+    saveData();
+    renderCustomers();
+
+    document.getElementById('cName').value = '';
+    document.getElementById('cPhone').value = '';
+  }
+
+  function renderCustomers() {
+    const list = document.getElementById('custList');
+    const select = document.getElementById('cartCustomer');
+    
+    list.innerHTML = '';
+    select.innerHTML = `<option value="">Walk-in Customer</option>`;
+
+    if (customers.length === 0) {
+      list.innerHTML = `<li style="font-size:0.8rem; color:var(--text-muted); padding:6px 0;">No saved customers.</li>`;
+    } else {
+      customers.forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'cust-item';
+        li.innerHTML = `<span><strong>${c.name}</strong> (${c.phone})</span><button class="btn btn-small btn-danger" onclick="deleteCustomer(${c.id})">&times;</button>`;
+        list.appendChild(li);
+
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.innerText = `${c.name} (${c.phone})`;
+        select.appendChild(opt);
+      });
+    }
+  }
+
+  function deleteCustomer(id) {
+    customers = customers.filter(c => c.id !== id);
+    saveData();
+    renderCustomers();
+  }
+
+  function saveProduct() {
+    const id = document.getElementById('editProductId').value;
+    const name = document.getElementById('pName').value.trim();
+    const price = parseFloat(document.getElementById('pPrice').value);
+    const stock = parseInt(document.getElementById('pStock').value);
+
+    if (!name || isNaN(price) || isNaN(stock)) return alert("Please enter valid item details.");
+
+    if (id) {
+      const prod = inventory.find(p => p.id == id);
+      if (prod) {
+        prod.name = name;
+        prod.price = price;
+        prod.stock = stock;
+      }
+    } else {
+      inventory.push({ id: Date.now(), name, price, stock });
+    }
+
+    saveData();
+    resetForm();
+    renderInventory();
+  }
+
+  function editProduct(id) {
+    const prod = inventory.find(p => p.id === id);
+    if (!prod) return;
+
+    document.getElementById('editProductId').value = prod.id;
+    document.getElementById('pName').value = prod.name;
+    document.getElementById('pPrice').value = prod.price;
+    document.getElementById('pStock').value = prod.stock;
+
+    document.getElementById('formTitle').innerText = "✏️ Edit Product Item";
+    document.getElementById('saveProductBtn').innerText = "Update Item";
+    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  }
+
+  function resetForm() {
+    document.getElementById('editProductId').value = '';
+    document.getElementById('pName').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pStock').value = '';
+
+    document.getElementById('formTitle').innerHTML = `🔒➕ Add New Item <span id="addLockBadge"></span>`;
+    document.getElementById('saveProductBtn').innerText = "Add Item";
+    document.getElementById('cancelEditBtn').style.display = 'none';
+  }
+
+  function deleteProduct(id) {
+    if (confirm("Are you sure you want to delete this product?")) {
+      inventory = inventory.filter(p => p.id !== id);
+      delete unlockedCards[id];
+      saveData();
+      renderInventory();
+    }
+  }
+
+  function clearAllStock() {
+    const pinCheck = prompt("🚨 Admin Verification:\nEnter admin security code to clear ALL inventory items:");
+    if (pinCheck === null) return;
+    if (pinCheck !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
+
+    if (confirm("Are you sure you want to remove all stock inventory items?")) {
+      inventory = [];
+      unlockedCards = {};
+      saveData();
+      renderInventory();
+    }
+  }
+
   function renderStats() {
-    const todayStr = new Date().toLocaleDateString();
-    let rev = 0, sold = 0;
+    const todayStr = new Date().toDateString();
+    let todayRev = 0;
+    let todayItems = 0;
 
     salesLog.forEach(s => {
-      const sDate = new Date(s.date).toLocaleDateString();
-      if (sDate === todayStr) {
-        rev += s.total;
-        sold += s.itemsCount;
+      if (new Date(s.dateISO || s.date).toDateString() === todayStr) {
+        todayRev += (s.total || 0);
+        (s.items || []).forEach(i => todayItems += (i.qty || 0));
       }
     });
 
-    document.getElementById('totalRevenue').innerText = fmtCurr(rev);
-    document.getElementById('itemsSold').innerText = sold;
-    renderSalesHistory();
-  }
-
-  function toggleDayGroup(el) {
-    const txns = el.nextElementSibling;
-    txns.classList.toggle('open');
+    document.getElementById('totalRevenue').innerText = fmtCurr(todayRev);
+    document.getElementById('itemsSold').innerText = todayItems;
   }
 
   function renderSalesHistory() {
-    const historyContainer = document.getElementById('salesHistory');
-    historyContainer.innerHTML = '';
+    const container = document.getElementById('salesHistory');
+    container.innerHTML = '';
 
     if (salesLog.length === 0) {
-      historyContainer.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted); margin:0;">No transaction records.</p>';
-      return;
+      return container.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted);">No sales recorded yet.</p>`;
     }
 
-    const grouped = {};
+    // Group sales by day
+    const groups = {};
     salesLog.forEach(s => {
-      const dayKey = new Date(s.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-      if (!grouped[dayKey]) grouped[dayKey] = { total: 0, items: [] };
-      grouped[dayKey].total += s.total;
-      grouped[dayKey].items.push(s);
+      const dayKey = new Date(s.dateISO || s.date).toDateString();
+      if (!groups[dayKey]) groups[dayKey] = [];
+      groups[dayKey].push(s);
     });
 
-    let html = '';
-    Object.keys(grouped).forEach(dayKey => {
-      const group = grouped[dayKey];
-      html += `
-        <div class="day-group">
-          <div class="day-header" onclick="toggleDayGroup(this)">
-            <span>📅 ${dayKey} (${group.items.length} Sales)</span>
-            <span>Total: ${fmtCurr(group.total)}</span>
-          </div>
-          <div class="day-txns">
-      `;
+    Object.keys(groups).forEach((day, idx) => {
+      const daySales = groups[day];
+      const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0);
 
-      group.items.forEach(s => {
-        html += `
-          <div class="sales-item">
-            <div>
-              <strong>${s.serial || s.id}</strong> - ${s.customer} (${s.itemsCount} items)
-            </div>
-            <div>${fmtCurr(s.total)}</div>
+      const groupEl = document.createElement('div');
+      groupEl.className = 'day-group';
+
+      const header = document.createElement('div');
+      header.className = 'day-header';
+      header.innerHTML = `<span>📅 ${day} (${daySales.length} Txns)</span><span>${fmtCurr(dayTotal)}</span>`;
+      header.onclick = () => {
+        const txns = groupEl.querySelector('.day-txns');
+        txns.classList.toggle('open');
+      };
+
+      const txnsDiv = document.createElement('div');
+      txnsDiv.className = `day-txns ${idx === 0 ? 'open' : ''}`;
+
+      daySales.forEach(s => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'sales-item';
+        itemEl.innerHTML = `
+          <div>
+            <strong>${s.serial}</strong> - ${s.customer}<br>
+            <small style="color:var(--text-muted);">${s.items.length} items</small>
+          </div>
+          <div style="text-align:right;">
+            <span style="color:var(--accent); font-weight:bold;">${fmtCurr(s.total)}</span><br>
+            <button class="btn btn-small btn-secondary" style="padding:2px 5px; font-size:0.7rem;" onclick='renderReceipt(${JSON.stringify(s)})'>Receipt</button>
           </div>
         `;
+        txnsDiv.appendChild(itemEl);
       });
 
-      html += `</div></div>`;
+      groupEl.appendChild(header);
+      groupEl.appendChild(txnsDiv);
+      container.appendChild(groupEl);
     });
-
-    historyContainer.innerHTML = html;
   }
 
   function exportCSV() {
-    if (salesLog.length === 0) return alert("No sales log data available for export.");
-    let csv = "Receipt Serial,Transaction ID,Date,Customer,Items Count,Subtotal,Tax Amount,Grand Total,Amount Tendered,Change Given\n";
+    if (salesLog.length === 0) return alert("No sales records to export!");
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Receipt Serial,Transaction ID,Date,Customer,Items,Subtotal,Tax,Total,Tendered,Change\n";
+
     salesLog.forEach(s => {
-      csv += `"${s.serial || ''}","${s.id}","${s.date}","${s.customer}",${s.itemsCount},${s.subtotal},${s.taxAmount},${s.total},${s.tendered},${s.change}\n`;
+      const itemDesc = (s.items || []).map(i => `${i.qty}x ${i.name}`).join('; ');
+      csvContent += `"${s.serial}","${s.id}","${s.date}","${s.customer}","${itemDesc}",${s.subtotal},${s.taxAmount},${s.total},${s.tendered},${s.change}\n`;
     });
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Sales_Export_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Sales_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
-  // Initialize App on Load
+  // Initialize on Load
   window.addEventListener('DOMContentLoaded', () => {
     checkAuthState();
   });
