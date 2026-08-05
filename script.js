@@ -1,17 +1,15 @@
-
-  // Replace with your Firebase Realtime Database URL
-  const firebaseConfig = {
+const firebaseConfig = {
    // databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
   };
 
   // Replace with your Paystack Public Key from paystack.com
- // const PAYSTACK_PUBLIC_KEY = "pk_test_83ef5571585074d04c4e27091aa867e1db960ed6"; 
+  // const PAYSTACK_PUBLIC_KEY = "pk_test_83ef5571585074d04c4e27091aa867e1db960ed6"; 
 
   let dbRef = null;
   let isRemoteSync = false;
   let syncKey = '';
   let connectedStores = [];
-  let selectedPlanAmount = 50;
+  let selectedPlanAmount = 100;
   let selectedPlanType = 'monthly';
 
   if (window.firebase && !firebase.apps.length) {
@@ -48,19 +46,16 @@
     { id: 3, name: "Tailoring Scissors 10-inch", price: 85.00, stock: 8 }
   ];
 
-  // Helper: Get user-isolated key for local storage
   function getUserStorageKey(keyName) {
     const userClean = currentUser ? currentUser.toLowerCase().trim() : 'guest';
     return `mb_store_${userClean}_${keyName}`;
   }
 
-  // Format amount with active currency symbol
   function fmtCurr(val) {
     const num = parseFloat(val) || 0;
     return `${currencySymbol} ${num.toFixed(2)}`;
   }
 
-  // Newsletter Handler
   function handleNewsletterSubmit(e) {
     e.preventDefault();
     const email = document.getElementById('newsletterEmail').value;
@@ -72,7 +67,34 @@
     }
   }
 
-  // Load User Data Namespace into Active State
+  function toggleFaq(el) {
+    const answer = el.nextElementSibling;
+    const indicator = el.querySelector('span');
+    if (answer.style.display === "block") {
+      answer.style.display = "none";
+      indicator.innerText = "+";
+    } else {
+      answer.style.display = "block";
+      indicator.innerText = "-";
+    }
+  }
+
+  function handleFeedbackSubmit(e) {
+    e.preventDefault();
+    const name = document.getElementById('fbName').value.trim();
+    const msg = document.getElementById('fbMessage').value.trim();
+    if (name && msg) {
+      const status = document.getElementById('fbStatus');
+      status.innerText = "Thank you! Your feedback has been submitted successfully.";
+      status.style.display = "block";
+      document.getElementById('fbName').value = '';
+      document.getElementById('fbEmail').value = '';
+      document.getElementById('fbMessage').value = '';
+    } else {
+      alert("Please fill in your name and feedback message.");
+    }
+  }
+
   function loadUserData() {
     if (!currentUser) return;
 
@@ -89,23 +111,9 @@
     const savedPhone = localStorage.getItem(getUserStorageKey('shop_phone'));
     const savedSerial = localStorage.getItem(getUserStorageKey('receipt_serial'));
 
-    if (savedInventory !== null) {
-      inventory = JSON.parse(savedInventory);
-    } else {
-      inventory = isDemo ? [...demoPresetInventory] : [];
-    }
-
-    if (savedCustomers !== null) {
-      customers = JSON.parse(savedCustomers);
-    } else {
-      customers = isDemo ? [{ id: 101, name: "Kofi Mensah", phone: "024-000-0000" }] : [];
-    }
-
-    if (savedSales !== null) {
-      salesLog = JSON.parse(savedSales);
-    } else {
-      salesLog = [];
-    }
+    inventory = savedInventory !== null ? JSON.parse(savedInventory) : (isDemo ? [...demoPresetInventory] : []);
+    customers = savedCustomers !== null ? JSON.parse(savedCustomers) : (isDemo ? [{ id: 101, name: "Kofi Mensah", phone: "024-000-0000" }] : []);
+    salesLog = savedSales !== null ? JSON.parse(savedSales) : [];
 
     securityPin = savedPin || '1234';
     syncKey = savedSyncKey || '';
@@ -143,15 +151,10 @@
     const hour = new Date().getHours();
     let greeting = "";
 
-    if (hour >= 5 && hour < 12) {
-      greeting = "Good Morning 🌅";
-    } else if (hour >= 12 && hour < 17) {
-      greeting = "Good Afternoon ☀️";
-    } else if (hour >= 17 && hour < 22) {
-      greeting = "Good Evening 🌙";
-    } else {
-      greeting = "Good Night 🌌";
-    }
+    if (hour >= 5 && hour < 12) greeting = "Good Morning 🌅";
+    else if (hour >= 12 && hour < 17) greeting = "Good Afternoon ☀️";
+    else if (hour >= 17 && hour < 22) greeting = "Good Evening 🌙";
+    else greeting = "Good Night 🌌";
 
     const greetingEl = document.getElementById('landingTimeGreeting');
     if (greetingEl) greetingEl.innerText = greeting;
@@ -162,7 +165,6 @@
 
     if (currentUser) {
       localStorage.setItem('mb_logged_user', currentUser);
-
       localStorage.setItem(getUserStorageKey('inventory'), JSON.stringify(inventory));
       localStorage.setItem(getUserStorageKey('customers'), JSON.stringify(customers));
       localStorage.setItem(getUserStorageKey('sales'), JSON.stringify(salesLog));
@@ -202,7 +204,6 @@
     saveData();
   }
 
-  // Modal Auth Controls
   function openAuthModal(view) {
     document.getElementById('authModal').style.display = 'flex';
     switchAuthView(view);
@@ -213,34 +214,55 @@
   }
 
   function switchAuthView(view) {
-    document.getElementById('demoForm').style.display = view === 'demo' ? 'flex' : 'none';
-    document.getElementById('loginForm').style.display = view === 'login' ? 'flex' : 'none';
-    document.getElementById('subscribeForm').style.display = view === 'subscribe' ? 'flex' : 'none';
-    document.getElementById('registerForm').style.display = view === 'register' ? 'flex' : 'none';
-    document.getElementById('forgotForm').style.display = view === 'forgot' ? 'flex' : 'none';
+    const modalViews = ['demoForm', 'loginForm', 'subscribeForm', 'registerForm', 'forgotForm', 'faqModalView', 'feedbackModalView', 'aboutModalView', 'termsModalView', 'privacyModalView'];
+    modalViews.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
 
     const title = document.getElementById('authModalTitle');
     const subtitle = document.getElementById('authSubtitle');
 
     if (view === 'demo') {
+      document.getElementById('demoForm').style.display = 'flex';
       title.innerText = "🎮 Create Free Demo Shop";
       subtitle.innerText = "Test out POS register, cart & receipt features instantly.";
-    }
-    if (view === 'login') {
+    } else if (view === 'login') {
+      document.getElementById('loginForm').style.display = 'flex';
       title.innerText = "🔐 Sign In";
       subtitle.innerText = "Welcome back! Enter credentials to access your store.";
-    }
-    if (view === 'subscribe') {
+    } else if (view === 'subscribe') {
+      document.getElementById('subscribeForm').style.display = 'flex';
       title.innerText = "🚀 Subscribe to Asetena";
       subtitle.innerText = "Select a plan & complete Mobile Money payment to register.";
-    }
-    if (view === 'register') {
+    } else if (view === 'register') {
+      document.getElementById('registerForm').style.display = 'flex';
       title.innerText = "📝 Complete Registration";
       subtitle.innerText = "Set up your store name & login credentials.";
-    }
-    if (view === 'forgot') {
+    } else if (view === 'forgot') {
+      document.getElementById('forgotForm').style.display = 'flex';
       title.innerText = "🔑 Recover Account";
       subtitle.innerText = "Reset your password with your security answer.";
+    } else if (view === 'faq') {
+      document.getElementById('faqModalView').style.display = 'flex';
+      title.innerText = "❓ Frequently Asked Questions";
+      subtitle.innerText = "Find quick answers to common questions about Azigizaro POS.";
+    } else if (view === 'feedback') {
+      document.getElementById('feedbackModalView').style.display = 'flex';
+      title.innerText = "💬 Customer Feedback";
+      subtitle.innerText = "We value your input! Send us your thoughts or review.";
+    } else if (view === 'about') {
+      document.getElementById('aboutModalView').style.display = 'flex';
+      title.innerText = "ℹ️ About Our Platform";
+      subtitle.innerText = "Empowering commerce and POS tracking in Ghana.";
+    } else if (view === 'terms') {
+      document.getElementById('termsModalView').style.display = 'flex';
+      title.innerText = "📜 Terms of Service";
+      subtitle.innerText = "Guidelines governing your shop account and software use.";
+    } else if (view === 'privacy') {
+      document.getElementById('privacyModalView').style.display = 'flex';
+      title.innerText = "🔒 Privacy Policy";
+      subtitle.innerText = "How we protect and secure your business information.";
     }
   }
 
@@ -270,20 +292,13 @@
     }
 
     const handler = PaystackPop.setup({
-      key: PAYSTACK_PUBLIC_KEY,
+      key: typeof PAYSTACK_PUBLIC_KEY !== 'undefined' ? PAYSTACK_PUBLIC_KEY : '',
       email: email,
       amount: selectedPlanAmount * 100,
       currency: "GHS",
       ref: 'AB_' + Math.floor((Math.random() * 1000000000) + 1),
-      metadata: {
-        custom_fields: [
-          { display_name: "Full Name", variable_name: "full_name", value: fullName },
-          { display_name: "Phone", variable_name: "phone", value: phone },
-          { display_name: "Plan", variable_name: "plan", value: selectedPlanType }
-        ]
-      },
       callback: function(response) {
-        alert("✅ Payment Successful! Transaction Ref: " + response.reference);
+        alert("✅ Payment Successful! Reference: " + response.reference);
         document.getElementById('paymentVerifiedBadge').style.display = 'block';
         switchAuthView('register');
       },
@@ -297,7 +312,6 @@
 
   function handleCreateDemoAccount() {
     const shopName = document.getElementById('demoShopName').value.trim() || "My Free Demo Store";
-    const userName = document.getElementById('demoUserName').value.trim() || "Demo User";
     const demoUsername = "demo_" + Math.floor(Math.random() * 10000);
 
     const demoUser = {
@@ -323,7 +337,7 @@
     receiptSerialCounter = 100001;
 
     saveData();
-    alert(`🎉 Free Demo Shop Created!\n\nShop Name: ${shopName}\nMode: Free Trial Demo`);
+    alert(`🎉 Free Demo Shop Created!\nShop: ${shopName}`);
     closeAuthModal();
     showAppScreen();
   }
@@ -378,7 +392,7 @@
     receiptSerialCounter = 100001;
 
     saveData();
-    alert("🎉 Account created & full store subscription activated successfully!");
+    alert("🎉 Account created & subscription activated successfully!");
     closeAuthModal();
     showAppScreen();
   }
@@ -394,7 +408,7 @@
     if (match) {
       match.password = newPass;
       saveData();
-      alert("✅ Password reset successfully! You can now log in.");
+      alert("✅ Password reset successfully!");
       switchAuthView('login');
       document.getElementById('loginUser').value = username;
     } else {
@@ -420,7 +434,7 @@
     const trimmed = newName.trim();
 
     if (users.some(u => u.username.toLowerCase() === trimmed.toLowerCase() && u.username !== currentUser)) {
-      return alert("⚠️ That username is taken.");
+      return alert("⚠️ Username is taken.");
     }
 
     const oldUser = currentUser;
@@ -440,7 +454,7 @@
 
       saveData();
       updateUserUI();
-      alert("✅ Username updated successfully!");
+      alert("✅ Username updated!");
     }
   }
 
@@ -452,12 +466,12 @@
       return alert("❌ Incorrect password.");
     }
 
-    const newPass = prompt("Enter your new password:");
+    const newPass = prompt("Enter new password:");
     if (!newPass || newPass.trim() === '') return alert("⚠️ Password cannot be empty.");
 
     userObj.password = newPass.trim();
     saveData();
-    alert("✅ Password updated successfully!");
+    alert("✅ Password updated!");
   }
 
   function checkAuthState() {
@@ -499,16 +513,11 @@
     document.getElementById('settingShopAddress').value = shopAddress;
     document.getElementById('settingShopPhone').value = shopPhone;
 
-    const demoBanner = document.getElementById('demoBanner');
-    demoBanner.style.display = isDemo ? 'flex' : 'none';
+    document.getElementById('demoBanner').style.display = isDemo ? 'flex' : 'none';
 
-    const sidebarSections = ['sidebarSectionSync', 'sidebarSectionSecurity', 'sidebarSectionReset', 'sidebarSectionBackup', 'sidebarSectionCurrency'];
-    sidebarSections.forEach(secId => {
+    ['sidebarSectionSync', 'sidebarSectionSecurity', 'sidebarSectionReset', 'sidebarSectionBackup', 'sidebarSectionCurrency'].forEach(secId => {
       const el = document.getElementById(secId);
-      if (el) {
-        if (isDemo) el.classList.add('demo-disabled-overlay');
-        else el.classList.remove('demo-disabled-overlay');
-      }
+      if (el) isDemo ? el.classList.add('demo-disabled-overlay') : el.classList.remove('demo-disabled-overlay');
     });
 
     const lockBadgeHTML = isDemo ? '<span style="color:var(--warning); font-size:0.75rem;">🔒 (Paid Feature)</span>' : '';
@@ -557,14 +566,13 @@
       syncKey = '';
 
       saveData();
-
       const badge = document.getElementById('syncBadge');
       badge.className = "sync-status sync-offline";
       badge.innerText = `Status: Offline / Local`;
 
       document.getElementById('syncKeyInput').value = '';
       renderConnectedStores();
-      alert("🔌 Disconnected from Live Sync. Operating in Local Mode.");
+      alert("🔌 Disconnected from Live Sync.");
     }
   }
 
@@ -610,11 +618,9 @@
     if (!syncKey || !window.firebase) return;
 
     document.getElementById('syncKeyInput').value = syncKey;
-    
     if (dbRef) dbRef.off();
 
     dbRef = firebase.database().ref('stores/' + syncKey);
-
     const badge = document.getElementById('syncBadge');
     badge.className = "sync-status sync-online";
     badge.innerText = `Sync Active: ${syncKey}`;
@@ -637,7 +643,7 @@
       }
     }, (error) => {
       badge.className = "sync-status sync-offline";
-      badge.innerText = `Sync Failed: Check Rules`;
+      badge.innerText = `Sync Failed`;
     });
   }
 
@@ -646,11 +652,11 @@
     if (currentPass !== securityPin) return alert("❌ Incorrect security code.");
 
     const newPass = prompt("🔑 Enter new 4-digit security code:");
-    if (!newPass || newPass.trim().length < 4) return alert("⚠️ Invalid. PIN must be at least 4 digits.");
+    if (!newPass || newPass.trim().length < 4) return alert("⚠️ PIN must be at least 4 digits.");
 
     securityPin = newPass.trim();
     saveData();
-    alert("✅ Security code updated successfully!");
+    alert("✅ Security code updated!");
   }
 
   function toggleSidebar(show) {
@@ -671,28 +677,21 @@
   function clearAllData() {
     if (!isResetUnlocked) return;
 
-    const pinCheck = prompt("🚨 Enter admin security code to confirm completely clearing ALL System Data:");
+    const pinCheck = prompt("🚨 Enter admin security code to confirm clearing ALL System Data:");
     if (pinCheck === null) return;
     if (pinCheck !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
 
-    if (confirm("FINAL WARNING: Are you absolutely sure? This will wipe your store data and reset back to landing page.")) {
+    if (confirm("FINAL WARNING: Are you absolutely sure? Wipes all store data.")) {
       if (currentUser) {
-        localStorage.removeItem(getUserStorageKey('inventory'));
-        localStorage.removeItem(getUserStorageKey('customers'));
-        localStorage.removeItem(getUserStorageKey('sales'));
-        localStorage.removeItem(getUserStorageKey('security_pin'));
-        localStorage.removeItem(getUserStorageKey('sync_key'));
-        localStorage.removeItem(getUserStorageKey('connected_stores'));
-        localStorage.removeItem(getUserStorageKey('currency'));
-        localStorage.removeItem(getUserStorageKey('shop_address'));
-        localStorage.removeItem(getUserStorageKey('shop_phone'));
-        localStorage.removeItem(getUserStorageKey('receipt_serial'));
+        ['inventory', 'customers', 'sales', 'security_pin', 'sync_key', 'connected_stores', 'currency', 'shop_address', 'shop_phone', 'receipt_serial'].forEach(key => {
+          localStorage.removeItem(getUserStorageKey(key));
+        });
       }
       inventory = []; customers = []; salesLog = []; cart = []; connectedStores = []; syncKey = '';
       currentUser = null;
       saveData(); renderInventory(); renderCustomers(); renderCart(); renderStats();
       toggleResetLock(); toggleSidebar(false); checkAuthState();
-      alert("✅ Store data has been successfully reset.");
+      alert("✅ Store data has been completely reset.");
     }
   }
 
@@ -730,7 +729,7 @@
     if (isCurrentDemoAccount()) return demoGuard();
 
     if (!unlockedCards[id]) {
-      const inputPin = prompt("🔒 Security Check:\nEnter admin security code to unlock and edit product:");
+      const inputPin = prompt("🔒 Enter admin security code to unlock and edit product:");
       if (inputPin === null) return;
       if (inputPin !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
       unlockedCards[id] = true;
@@ -746,11 +745,10 @@
     grid.innerHTML = '';
 
     const isDemo = isCurrentDemoAccount();
-
     let items = inventory.filter(item => item.name.toLowerCase().includes(query));
     items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
-    if (items.length === 0) return grid.innerHTML = `<p style="font-size:0.85rem; grid-column: 1/-1;">No items found. Add items using the form below or connect a store.</p>`;
+    if (items.length === 0) return grid.innerHTML = `<p style="font-size:0.85rem; grid-column: 1/-1;">No items found.</p>`;
 
     items.forEach(item => {
       const isUnlocked = !isDemo && !!unlockedCards[item.id];
@@ -790,7 +788,7 @@
 
     if (!name || isNaN(price) || isNaN(stock)) return alert('Fill out all item fields.');
 
-    const pinCheck = prompt("🔒 Admin PIN Verification Required:\nEnter admin security code to add/update product:");
+    const pinCheck = prompt("🔒 Admin PIN Verification Required:");
     if (pinCheck === null) return;
     if (pinCheck !== securityPin) return alert("❌ Access Denied: Incorrect Security Code!");
 
@@ -800,7 +798,7 @@
     } else inventory.push({ id: Date.now(), name, price, stock });
 
     saveData(); renderInventory(); resetForm();
-    alert("✅ Product saved successfully!");
+    alert("✅ Product saved!");
   }
 
   function editProduct(id) {
@@ -943,17 +941,6 @@
       }
     }
 
-    let confirmMsg = `🛒 CONFIRM SALE CHECKOUT\nCustomer: ${custName}\n-----------------------------------\n`;
-    cart.forEach((item, idx) => {
-      const lineTotal = item.price * item.qty;
-      confirmMsg += `${idx + 1}. ${item.name} x${item.qty} @ ${fmtCurr(item.price)} = ${fmtCurr(lineTotal)}\n`;
-    });
-    confirmMsg += `-----------------------------------\nSubtotal: ${fmtCurr(subtotal)}\nTax (${taxPercent}%): ${fmtCurr(taxAmount)}\nGRAND TOTAL: ${fmtCurr(grandTotal)}\nTendered: ${fmtCurr(tendered)}\nChange: ${fmtCurr(change >= 0 ? change : 0)}\n\nProcess receipt now?`;
-
-    if (!confirm(confirmMsg)) {
-      return;
-    }
-
     let itemsCount = 0, receiptHTML = '', details = [];
 
     cart.forEach(c => {
@@ -963,171 +950,163 @@
       itemsCount += c.qty;
       details.push({ name: c.name, unitPrice: c.price, qty: c.qty, lineTotal });
       receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px; color:#000;">
-        <span>${c.name} (x${c.qty} @ ${fmtCurr(c.price)})</span><span>${fmtCurr(lineTotal)}</span></div>`;
+        <span>${c.name} (x${c.qty})</span>
+        <span>${fmtCurr(lineTotal)}</span>
+      </div>`;
     });
 
-    const now = new Date();
-    const timestamp = now.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-    const dateOnly = now.toLocaleDateString();
-    const txnId = 'TXN-' + Date.now().toString().slice(-6);
-    const serialNo = 'SN-' + receiptSerialCounter++;
+    const txId = "TX-" + Date.now().toString().slice(-6);
+    const dateStr = new Date().toLocaleString();
+    const currentSerial = "RCP-" + receiptSerialCounter++;
 
-    salesLog.unshift({ 
-      txnId, 
-      serialNo, 
-      date: timestamp, 
-      dateOnly, 
-      customer: custName, 
-      itemsCount, 
-      itemsDetails: details, 
+    salesLog.unshift({
+      id: txId,
+      serial: currentSerial,
+      date: dateStr,
+      customer: custName,
+      itemsCount,
       subtotal,
+      taxPercent,
       taxAmount,
-      total: grandTotal, 
+      total: grandTotal,
       tendered,
       change: change >= 0 ? change : 0,
-      cashier: currentUser,
-      currency: currencySymbol 
+      details
     });
 
+    saveData(); renderInventory(); renderStats();
+
+    // Populate Receipt View
     document.getElementById('rStoreAddress').innerText = shopAddress;
     document.getElementById('rStorePhone').innerText = `Tel: ${shopPhone}`;
-    document.getElementById('rSerial').innerText = `Serial No: ${serialNo}`;
-    document.getElementById('rTransactionId').innerText = `Receipt #: ${txnId} | Cashier: ${currentUser}`;
-    document.getElementById('rDate').innerText = `Date: ${timestamp}`;
+    document.getElementById('rDate').innerText = `Date: ${dateStr}`;
     document.getElementById('rCustomer').innerText = `Customer: ${custName}`;
+    document.getElementById('rSerial').innerText = `Receipt #: ${currentSerial}`;
+    document.getElementById('rTransactionId').innerText = `Txn ID: ${txId}`;
     document.getElementById('rItems').innerHTML = receiptHTML;
-
     document.getElementById('rSubtotal').innerText = fmtCurr(subtotal);
-    document.getElementById('rTax').innerText = fmtCurr(taxAmount);
+    document.getElementById('rTax').innerText = `${fmtCurr(taxAmount)} (${taxPercent}%)`;
     document.getElementById('rTotal').innerText = fmtCurr(grandTotal);
     document.getElementById('rTendered').innerText = fmtCurr(tendered);
     document.getElementById('rChange').innerText = fmtCurr(change >= 0 ? change : 0);
 
-    // Generate Scannable Barcode
-    if (window.JsBarcode) {
-      try {
-        JsBarcode("#receiptBarcode", txnId, {
-          format: "CODE128",
-          width: 1.5,
-          height: 35,
-          displayValue: true,
-          fontSize: 10,
-          margin: 2
-        });
-      } catch (err) { console.error("Barcode generation error:", err); }
-    }
+    try {
+      JsBarcode("#receiptBarcode", currentSerial, {
+        format: "CODE128",
+        lineColor: "#000",
+        width: 1.5,
+        height: 35,
+        displayValue: true,
+        fontSize: 10
+      });
+    } catch(e) { console.error(e); }
 
     document.getElementById('receiptModal').style.display = 'flex';
+    clearCart();
+  }
 
-    cart = []; 
-    document.getElementById('cartAmountTendered').value = '';
-    saveData(); 
-    renderInventory(); 
-    renderCart(); 
-    renderStats();
+  function closeReceipt() {
+    document.getElementById('receiptModal').style.display = 'none';
   }
 
   function saveReceiptPDF() {
     const element = document.getElementById('receiptContainer');
-    
-    if (window.html2pdf) {
-      const opt = {
-        margin:       0.2,
-        filename:     `Receipt_${Date.now()}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, logging: false, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a6', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(element).save().catch(err => {
-        window.print();
-      });
-    } else {
-      window.print();
-    }
+    const opt = {
+      margin: 5,
+      filename: `Receipt_${Date.now()}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: [80, 200], orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
   }
-
-  function closeReceipt() { document.getElementById('receiptModal').style.display = 'none'; }
 
   function renderStats() {
     const todayStr = new Date().toLocaleDateString();
-    let todayRev = 0, todayCount = 0;
-    const historyList = document.getElementById('salesHistory');
-    historyList.innerHTML = '';
-
-    const groupedData = {};
+    let rev = 0, sold = 0;
 
     salesLog.forEach(s => {
-      const recordDate = s.dateOnly || s.date.split(',')[0].trim();
-
-      if (recordDate === todayStr) {
-        todayRev += (s.total || 0);
-        todayCount += (s.itemsCount || 0);
+      const sDate = new Date(s.date).toLocaleDateString();
+      if (sDate === todayStr) {
+        rev += s.total;
+        sold += s.itemsCount;
       }
-
-      if (!groupedData[recordDate]) groupedData[recordDate] = { total: 0, items: 0, txns: [] };
-      groupedData[recordDate].total += (s.total || 0);
-      groupedData[recordDate].items += (s.itemsCount || 0);
-      groupedData[recordDate].txns.push(s);
     });
 
-    document.getElementById('totalRevenue').innerText = fmtCurr(todayRev);
-    document.getElementById('itemsSold').innerText = todayCount;
-
-    if(Object.keys(groupedData).length === 0) {
-      historyList.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">No recorded activities yet.</p>`;
-    }
-
-    Object.keys(groupedData).forEach(dateKey => {
-      const day = groupedData[dateKey];
-      const safeId = dateKey.replace(/[^a-zA-Z0-9]/g, '-');
-      const isToday = (dateKey === todayStr);
-
-      const groupDiv = document.createElement('div');
-      groupDiv.className = 'day-group';
-      
-      const txnsHTML = day.txns.map(t => `
-        <div class="sales-item">
-          <span>${t.serialNo || t.txnId} - ${t.customer} (${t.itemsCount} items) [${t.cashier || 'System'}]</span>
-          <span style="color: var(--accent); font-weight: bold;">+${fmtCurr(t.total || 0)}</span>
-        </div>
-      `).join('');
-
-      groupDiv.innerHTML = `
-        <div class="day-header" onclick="toggleDayGroup('${safeId}')">
-          <span>📅 ${isToday ? 'Today' : dateKey} (${day.items} items sold)</span>
-          <span>${fmtCurr(day.total)} ▼</span>
-        </div>
-        <div class="day-txns" id="day-log-${safeId}">
-          ${txnsHTML}
-        </div>
-      `;
-      
-      historyList.appendChild(groupDiv);
-    });
+    document.getElementById('totalRevenue').innerText = fmtCurr(rev);
+    document.getElementById('itemsSold').innerText = sold;
+    renderSalesHistory();
   }
 
-  function toggleDayGroup(id) {
-    const el = document.getElementById(`day-log-${id}`);
-    if (el) el.classList.toggle('open');
+  function toggleDayGroup(el) {
+    const txns = el.nextElementSibling;
+    txns.classList.toggle('open');
+  }
+
+  function renderSalesHistory() {
+    const historyContainer = document.getElementById('salesHistory');
+    historyContainer.innerHTML = '';
+
+    if (salesLog.length === 0) {
+      historyContainer.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted); margin:0;">No transaction records.</p>';
+      return;
+    }
+
+    const grouped = {};
+    salesLog.forEach(s => {
+      const dayKey = new Date(s.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+      if (!grouped[dayKey]) grouped[dayKey] = { total: 0, items: [] };
+      grouped[dayKey].total += s.total;
+      grouped[dayKey].items.push(s);
+    });
+
+    let html = '';
+    Object.keys(grouped).forEach(dayKey => {
+      const group = grouped[dayKey];
+      html += `
+        <div class="day-group">
+          <div class="day-header" onclick="toggleDayGroup(this)">
+            <span>📅 ${dayKey} (${group.items.length} Sales)</span>
+            <span>Total: ${fmtCurr(group.total)}</span>
+          </div>
+          <div class="day-txns">
+      `;
+
+      group.items.forEach(s => {
+        html += `
+          <div class="sales-item">
+            <div>
+              <strong>${s.serial || s.id}</strong> - ${s.customer} (${s.itemsCount} items)
+            </div>
+            <div>${fmtCurr(s.total)}</div>
+          </div>
+        `;
+      });
+
+      html += `</div></div>`;
+    });
+
+    historyContainer.innerHTML = html;
   }
 
   function exportCSV() {
-    if (salesLog.length === 0) return alert('No sales available to export.');
-    let csv = "Serial No,Transaction ID,Date,Customer,Cashier,Product,Unit Price,Qty,Line Total,Subtotal,Tax,Transaction Total,Tendered,Change,Currency\n";
+    if (salesLog.length === 0) return alert("No sales log data available for export.");
+    let csv = "Receipt Serial,Transaction ID,Date,Customer,Items Count,Subtotal,Tax Amount,Grand Total,Amount Tendered,Change Given\n";
     salesLog.forEach(s => {
-      const curr = s.currency || currencySymbol;
-      if (s.itemsDetails?.length) {
-        s.itemsDetails.forEach(i => {
-          csv += `"${s.serialNo || ''}","${s.txnId}","${s.date}","${s.customer}","${s.cashier || 'System'}","${i.name}",${i.unitPrice},${i.qty},${i.lineTotal},${s.subtotal || s.total},${s.taxAmount || 0},${s.total},${s.tendered || s.total},${s.change || 0},"${curr}"\n`;
-        });
-      } else {
-        csv += `"${s.serialNo || ''}","${s.txnId}","${s.date}","${s.customer}","${s.cashier || 'System'}","Summary",0,${s.itemsCount},${s.total},${s.subtotal || s.total},${s.taxAmount || 0},${s.total},${s.tendered || s.total},${s.change || 0},"${curr}"\n`;
-      }
+      csv += `"${s.serial || ''}","${s.id}","${s.date}","${s.customer}",${s.itemsCount},${s.subtotal},${s.taxAmount},${s.total},${s.tendered},${s.change}\n`;
     });
-    const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }));
-    const a = document.createElement('a'); a.href = url; a.download = `Sales_${Date.now()}.csv`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Sales_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
-  checkAuthState();
+  // Initialize App on Load
+  window.addEventListener('DOMContentLoaded', () => {
+    checkAuthState();
+  });
