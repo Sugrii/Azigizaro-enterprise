@@ -85,9 +85,49 @@
       </div>
     </div>
 
+    <!-- Landing Page Interactive FAQ Section -->
+    <div style="margin-top: 50px;">
+      <h2 style="text-align: center; font-size: 1.5rem; color: var(--text); margin-bottom: 20px;">Frequently Asked Questions (FAQ)</h2>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">Does Azigizaro Enterprise work completely offline? <span>+</span></div>
+        <div class="faq-answer">Yes! All inventory, customer records, and transaction logs are stored locally in your browser. You can register sales without an active internet connection.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">How does multi-device real-time sync work? <span>+</span></div>
+        <div class="faq-answer">By entering a unique Store Sync Key in your settings, terminals link via Firebase Realtime Database so sales and stock changes sync live across your devices.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">What Mobile Money networks are supported? <span>+</span></div>
+        <div class="faq-answer">We accept MTN Mobile Money, Telecel Cash, and AT Money directly through integrated Paystack payments in Ghanaian Cedis (GH₵).</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">How do I protect my stock data from unauthorized edits? <span>+</span></div>
+        <div class="faq-answer">The system features built-in Security Code verification (Default: 1234). Cashiers can ring up sales, but editing or deleting stock requires an admin code.</div>
+      </div>
+    </div>
+
+    <!-- Customer Feedback Highlights -->
+    <div style="margin-top: 50px;">
+      <h2 style="text-align: center; font-size: 1.5rem; color: var(--text); margin-bottom: 20px;">What Ghanaian Shop Owners Say</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <p style="font-style: italic;">"This app changed how we track sales at Makola Market. Printing PDF receipts right from my phone is brilliant."</p>
+          <h4 style="color: var(--accent); margin: 12px 0 0 0; text-align: right;">— Yaw Mensah (Retail Merchant)</h4>
+        </div>
+        <div class="feature-card">
+          <p style="font-style: italic;">"The Mobile Money paystack integration made subscription quick. The offline mode saves us during network dropouts."</p>
+          <h4 style="color: var(--accent); margin: 12px 0 0 0; text-align: right;">— Abena Serwaa (Boutique Owner)</h4>
+        </div>
+      </div>
+    </div>
+
     <!-- Newsletter Subscription Section -->
     <div class="newsletter-section">
-      <h3>📩 Stay Updated with Asetena Business Tips</h3>
+      <h3>📩 Stay Updated with Azigizaro Enterprise Business Tips</h3>
       <p>Subscribe to our newsletter for micro-business growth strategies, retail tips, and feature updates.</p>
       <form class="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
         <input type="email" id="newsletterEmail" placeholder="Enter your email address..." required>
@@ -101,8 +141,19 @@
   <footer class="landing-footer">
     <div class="footer-grid">
       <div class="footer-col">
-        <h4>Asetena Biz Suite</h4>
+        <h4>Azigizaro Enterprise Shop Manager</h4>
         <p style="font-size: 0.8rem; line-height: 1.5;">Localization-focused retail POS system designed to streamline commerce, revenue management, and inventory sync in Ghana and other countries.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Quick Links & Info</h4>
+        <ul>
+          <li><a onclick="openAuthModal('about')">About Us</a></li>
+          <li><a onclick="openAuthModal('faq')">Frequently Asked Questions</a></li>
+          <li><a onclick="openAuthModal('feedback')">Customer Feedback</a></li>
+          <li><a onclick="openAuthModal('terms')">Terms of Service</a></li>
+          <li><a onclick="openAuthModal('privacy')">Privacy Policy</a></li>
+        </ul>
       </div>
 
       <div class="footer-col">
@@ -116,20 +167,10 @@
       </div>
 
       <div class="footer-col">
-        <h4>Supported Payment Options</h4>
-        <ul>
-          <li>💛 MTN Mobile Money</li>
-          <li>❤️ Telecel Cash</li>
-          <li>💙 AT Money</li>
-          <li>💳 Paystack Cards (GH₵)</li>
-        </ul>
-      </div>
-
-      <div class="footer-col">
         <h4>Support & Enquiries</h4>
         <p style="margin-bottom:6px;">📍 Accra, Ghana</p>
-        <p style="margin-bottom:6px;">✉️ support@asetenabiz.com</p>
-        <p>📞 +233 (0) 24 000 0000</p>
+        <p style="margin-bottom:6px;">✉️ support@azigizaroenterprise.com</p>
+        <p> <a href="tel:2047946116" style="color: var(--text-muted);text-decoration: none;">📞 +233 (0) 24 794 6116</a></p>
       </div>
     </div>
 
@@ -140,12 +181,66 @@
   </footer>
 </div>
 
-<!-- Modal Dialog Container for Auth Actions -->
+<!-- Modal Dialog Container for Auth Actions & Information Views -->
 <div class="auth-modal" id="authModal">
   <div class="auth-card">
     <button class="close-modal-btn" onclick="closeAuthModal()">&times;</button>
     <h2 id="authModalTitle">Welcome</h2>
     <p class="subtitle" id="authSubtitle">Please enter your details below.</p>
+
+    <!-- FAQ Modal View -->
+    <div id="faqModalView" class="auth-form" style="display:none;">
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">Does Azigizaro Enterprise work offline? <span>+</span></div>
+        <div class="faq-answer">Yes, sales and inventory are stored on your local device memory using WebStorage, so you can keep working even without internet connection.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">Can I print receipts? <span>+</span></div>
+        <div class="faq-answer">Yes! You can generate formatted receipts with custom barcodes and save or print them as high-quality PDFs.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">What currencies are available? <span>+</span></div>
+        <div class="faq-answer">It supports Ghanaian Cedis (GH₵), US Dollars ($), Euros (€), British Pounds (£), and Nigerian Naira (₦).</div>
+      </div>
+    </div>
+
+    <!-- Feedback Form Modal View -->
+    <div id="feedbackModalView" class="auth-form" style="display:none;">
+      <div>
+        <label>Your Name</label>
+        <input type="text" id="fbName" placeholder="Enter your full name">
+      </div>
+      <div>
+        <label>Email Address</label>
+        <input type="email" id="fbEmail" placeholder="Enter your email">
+      </div>
+      <div>
+        <label>Feedback / Testimonial</label>
+        <textarea id="fbMessage" rows="4" placeholder="Share your experience or suggestions..."></textarea>
+      </div>
+      <button class="btn" style="width:100%;" onclick="handleFeedbackSubmit(event)">Submit Feedback</button>
+      <p id="fbStatus" style="font-size:0.8rem; color:var(--accent); text-align:center; display:none; margin: 4px 0 0 0;"></p>
+    </div>
+
+    <!-- About Us View -->
+    <div id="aboutModalView" class="auth-form" style="display:none; text-align: left; font-size: 0.9rem; line-height: 1.6; color: var(--text-muted);">
+      <p><strong>Azigizaro Enterprise Shop Manager Suite</strong> is engineered specifically to empower Ghanaian and other countries retail shop owners and micro-business managers.</p>
+      <p>Our platform resolves daily point-of-sale operational challenges by enabling full offline capability, seamlessly converting local transactions, generating PDF & barcode receipts, and providing real-time multi-device database sync capabilities through Firebase.</p>
+    </div>
+
+    <!-- Terms of Service View -->
+    <div id="termsModalView" class="auth-form" style="display:none; text-align: left; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted);">
+      <h4 style="color:var(--text); margin:0 0 6px 0;">1. License & Account Access</h4>
+      <p style="margin-top:0;">Subscriptions grant non-transferable rights to manage point-of-sale activities. Users remain responsible for protecting their security PINs and credentials.</p>
+      <h4 style="color:var(--text); margin:10px 0 6px 0;">2. Data Storage</h4>
+      <p style="margin-top:0;">Local data is preserved in your device browser storage. Multi-device sync uses encrypted key parameters via cloud databases.</p>
+    </div>
+
+    <!-- Privacy Policy View -->
+    <div id="privacyModalView" class="auth-form" style="display:none; text-align: left; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted);">
+      <h4 style="color:var(--text); margin:0 0 6px 0;">Data Protection & Security</h4>
+      <p style="margin-top:0;">We prioritize business privacy. Personal details collected during registration or payments via Paystack are processed securely and strictly used for service provisioning.</p>
+    </div>
 
     <!-- Create Free Demo Account View -->
     <div id="demoForm" class="auth-form" style="display:none;">
@@ -218,7 +313,7 @@
       </div>
 
       <button class="btn" style="width: 100%; margin-top: 8px; background: #38bdf8; color: #0f172a;" onclick="processMoMoPayment()">
-        💳 Pay GH₵ <span id="payAmountDisplay">50.00</span> via Paystack / MoMo
+        💳 Pay GH₵ <span id="payAmountDisplay">100.00</span> via Paystack / MoMo
       </button>
 
       <div class="auth-links" style="justify-content: center;">
