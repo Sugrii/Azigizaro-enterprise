@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azigizaro Enterprise - Complete Ghanaian Retail & Sales Suite</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- html2pdf.js library for PDF printing and saving -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- JsBarcode library for Receipt Barcode Generation -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+  <!-- Paystack Inline SDK for Mobile Money & Card Payments in Ghana -->
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+
+  <!-- Firebase App & Realtime Database SDKs for Real-Time Cross-Device Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  
+</head>
+<body>
+
+<!-- Landing Page & Auth Overlay -->
+<div class="auth-overlay" id="authScreen">
+  <!-- Top Navigation Header -->
+  <nav class="landing-nav">
+    <div class="brand-logo">📊 AZIGIZARO ENTERPRISE SHOP MANAGER SUITE</div>
+    <div class="nav-actions">
+      <button class="btn btn-warning btn-small" onclick="openAuthModal('demo')">🎮 Try Demo Account</button>
+      <button class="btn btn-secondary btn-small" onclick="openAuthModal('login')">🔐 Log In</button>
+      <button class="btn btn-small" onclick="openAuthModal('subscribe')">🚀 Start Now</button>
+    </div>
+  </nav>
+
+  <!-- Landing Page Content -->
+  <div class="landing-container">
+    <div class="hero-section">
+      <div class="time-greeting" id="landingTimeGreeting">Good Day!</div>
+      <h1 class="hero-title">Empowering Ghanaian Retail & Business Management</h1>
+      <p class="hero-desc">
+        <strong>Azigizaro Enterprise Shop Manager</strong> is an all-in-one Point-of-Sale (POS), inventory tracker, and sales management solution tailored specifically for micro and small businesses in Ghana. Operate seamlessly offline, track sales in multiple currencies, print instant barcode receipts with PDF support, and sync live across devices.
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="hero-cta-group">
+        <button class="btn-hero btn-warning" onclick="openAuthModal('demo')">🎮 Create Free Demo Shop</button>
+        <button class="btn-hero btn" onclick="openAuthModal('subscribe')">🚀 Start Subscription</button>
+        <button class="btn-hero btn-secondary" onclick="openAuthModal('login')">🔐 Log In</button>
+      </div>
+    </div>
+
+    <!-- Deep Platform Information Cards -->
+    <h2 style="text-align: center; font-size: 1.5rem; margin-top: 20px; color: var(--text);">Why Choose Azigizaro Enterprise Shop Manager?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <h3>🛒 Offline POS Register</h3>
+        <p>Ring up customers effortlessly with cart controls, dynamic stock depletion, tax calculation, change given display, and instantaneous barcode receipt generation.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>📦 Smart Inventory Control</h3>
+        <p>Keep precise tabs on item stock levels. Automatically alerts you on low or out-of-stock items, complete with PIN-protected edit controls to secure inventory.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>📲 Integrated Mobile Money</h3>
+        <p>Seamlessly accepts activations via Paystack supporting MTN Mobile Money, Telecel Cash, and AT Money, ensuring instant Ghanaian currency processing.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>🔄 Multi-Device Cloud Sync</h3>
+        <p>Connect multiple store terminals using custom Sync Keys powered by Firebase Realtime Database. Track transactions from home or the counter simultaneously.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>👥 Customer Directory</h3>
+        <p>Maintain your buyer database with names and phone numbers. Assign transactions directly to walk-in or loyal customers for better transaction history.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>📜 Financial Logs & Exporting</h3>
+        <p>View daily grouped revenue totals and export comprehensive CSV spreadsheets for accounting, auditing, and tax preparation with one click.</p>
+      </div>
+    </div>
+
+    <!-- Newsletter Subscription Section -->
+    <div class="newsletter-section">
+      <h3>📩 Stay Updated with Asetena Business Tips</h3>
+      <p>Subscribe to our newsletter for micro-business growth strategies, retail tips, and feature updates.</p>
+      <form class="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
+        <input type="email" id="newsletterEmail" placeholder="Enter your email address..." required>
+        <button type="submit" class="btn">Subscribe Now</button>
+      </form>
+      <p id="newsletterMsg" style="margin-top: 10px; font-size: 0.85rem; color: var(--accent); display: none;"></p>
+    </div>
+  </div>
+
+  <!-- Functional Footer -->
+  <footer class="landing-footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Asetena Biz Suite</h4>
+        <p style="font-size: 0.8rem; line-height: 1.5;">Localization-focused retail POS system designed to streamline commerce, revenue management, and inventory sync in Ghana and other countries.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Quick Actions</h4>
+        <ul>
+          <li><a onclick="openAuthModal('demo')">Try Demo Shop Free</a></li>
+          <li><a onclick="openAuthModal('subscribe')">Subscribe & Start Now</a></li>
+          <li><a onclick="openAuthModal('login')">Account Sign In</a></li>
+          <li><a onclick="openAuthModal('forgot')">Forgot Password</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Supported Payment Options</h4>
+        <ul>
+          <li>💛 MTN Mobile Money</li>
+          <li>❤️ Telecel Cash</li>
+          <li>💙 AT Money</li>
+          <li>💳 Paystack Cards (GH₵)</li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Support & Enquiries</h4>
+        <p style="margin-bottom:6px;">📍 Accra, Ghana</p>
+        <p style="margin-bottom:6px;">✉️ support@asetenabiz.com</p>
+        <p>📞 +233 (0) 24 000 0000</p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>&copy; <span id="footerYear">2026</span> Azigizaro Enterprise Shop Manager Suite. All Rights Reserved.</div>
+      <div>Status: <span style="color:var(--accent);">● Systems Operational</span></div>
+    </div>
+  </footer>
+</div>
+
+<!-- Modal Dialog Container for Auth Actions -->
+<div class="auth-modal" id="authModal">
+  <div class="auth-card">
+    <button class="close-modal-btn" onclick="closeAuthModal()">&times;</button>
+    <h2 id="authModalTitle">Welcome</h2>
+    <p class="subtitle" id="authSubtitle">Please enter your details below.</p>
+
+    <!-- Create Free Demo Account View -->
+    <div id="demoForm" class="auth-form" style="display:none;">
+      <div>
+        <label>Shop / Business Name</label>
+        <input type="text" id="demoShopName" placeholder="e.g. Ama Enterprise Demo">
+      </div>
+      <div>
+        <label>Your Name</label>
+        <input type="text" id="demoUserName" placeholder="e.g. Ama Serwaa">
+      </div>
+      <button class="btn btn-warning" style="width: 100%; margin-top: 8px;" onclick="handleCreateDemoAccount()">🎮 Launch Free Demo Shop</button>
+      
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('subscribe')">Ready to buy full version? Subscribe Here</a>
+      </div>
+    </div>
+
+    <!-- Login View -->
+    <div id="loginForm" class="auth-form">
+      <div>
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="Enter username">
+      </div>
+      <div>
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="Enter password">
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px;" onclick="handleLogin()">Sign In</button>
+      
+      <div class="auth-links">
+        <a onclick="switchAuthView('forgot')">Forgot Password?</a>
+        <a onclick="switchAuthView('subscribe')">Create Account</a>
+      </div>
+    </div>
+
+    <!-- Step 1: Subscription & MoMo Payment Screen -->
+    <div id="subscribeForm" class="auth-form" style="display:none;">
+      <label>Choose Subscription Plan:</label>
+      <div class="plan-grid">
+        <div class="plan-card selected" id="planMonthly" onclick="selectPlan(100, 'monthly', this)">
+          <div class="plan-title">Monthly</div>
+          <div class="plan-price">GH₵ 100.00</div>
+        </div>
+        <div class="plan-card" id="planYearly" onclick="selectPlan(1080, 'yearly', this)">
+          <div class="plan-title">Yearly (Save 10%)</div>
+          <div class="plan-price">GH₵ 1080.00</div>
+        </div>
+      </div>
+
+      <div>
+        <label>Full Name</label>
+        <input type="text" id="subFullName" placeholder="e.g. Ama Serwaa">
+      </div>
+      <div>
+        <label>Email Address</label>
+        <input type="email" id="subEmail" placeholder="e.g. ama@gmail.com">
+      </div>
+      <div>
+        <label>Mobile Money Phone Number</label>
+        <input type="tel" id="subPhone" placeholder="e.g. 024XXXXXXX">
+      </div>
+      <div>
+        <label>Network Provider</label>
+        <select id="subMomoNetwork">
+          <option value="mtn">MTN Mobile Money</option>
+          <option value="telecel">Telecel Cash</option>
+          <option value="at">AT Money</option>
+        </select>
+      </div>
+
+      <button class="btn" style="width: 100%; margin-top: 8px; background: #38bdf8; color: #0f172a;" onclick="processMoMoPayment()">
+        💳 Pay GH₵ <span id="payAmountDisplay">50.00</span> via Paystack / MoMo
+      </button>
+
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('login')">Already have an account? Sign In</a>
+      </div>
+    </div>
+
+    <!-- Step 2: Account Registration View (Unlocked after Payment) -->
+    <div id="registerForm" class="auth-form" style="display:none;">
+      <div id="paymentVerifiedBadge" style="background: #064e3b; padding: 8px; border-radius: 6px; font-size: 0.78rem; color: #34d399; margin-bottom: 6px; text-align: center; display:none;">
+        ✅ Payment Verified! Complete your shop details & login credentials below.
+      </div>
+      <div>
+        <label>Preferred Shop / Business Name</label>
+        <input type="text" id="regShopName" placeholder="e.g. Akosua Fabrics Store">
+      </div>
+      <div>
+        <label>Create Username</label>
+        <input type="text" id="regUser" placeholder="Choose username">
+      </div>
+      <div>
+        <label>Create Password</label>
+        <input type="password" id="regPass" placeholder="Choose password">
+      </div>
+      <div>
+        <label>Security Answer (for recovery)</label>
+        <input type="text" id="regSecurity" placeholder="What is your favorite color?">
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px;" onclick="handleRegister()">Complete Registration</button>
+      
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('subscribe')">Need to subscribe first? Click here</a>
+      </div>
+    </div>
+
+    <!-- Forgot Password View -->
+    <div id="forgotForm" class="auth-form" style="display:none;">
+      <div>
+        <label>Your Username</label>
+        <input type="text" id="recUser" placeholder="Enter username">
+      </div>
+      <div>
+        <label>Security Question Answer</label>
+        <input type="text" id="recSecurity" placeholder="What is your favorite color?">
+      </div>
+      <div>
+        <label>New Password</label>
+        <input type="password" id="recNewPass" placeholder="Enter new password">
+      </div>
+      <button class="btn btn-warning" style="width: 100%; margin-top: 8px;" onclick="handleResetPassword()">Reset Password</button>
+
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('login')">Back to Sign In</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar Settings -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+<div class="sidebar-drawer" id="sidebarDrawer">
+  <div class="sidebar-header">
+    <h3>⚙️ Settings & Controls</h3>
+    <button class="close-sidebar-btn" onclick="toggleSidebar(false)">&times;</button>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionCurrency">
+    <h4>💱 Store Currency & Info</h4>
+    <p>Configure shop currency, location, and telephone contact for receipts.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div>
+        <label style="font-size:0.75rem; color:var(--text-muted);">Active Currency Symbol:</label>
+        <select id="currencySelector" onchange="updateCurrencySetting()">
+          <option value="GH₵">GH₵ - Ghanaian Cedi</option>
+          <option value="$">$ - US Dollar</option>
+          <option value="€">€ - Euro</option>
+          <option value="£">£ - British Pound</option>
+          <option value="₦">₦ - Nigerian Naira</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.75rem; color:var(--text-muted);">Shop Location Address:</label>
+        <input type="text" id="settingShopAddress" placeholder="e.g. Makola Market, Accra" onchange="updateShopInfoSetting()">
+      </div>
+      <div>
+        <label style="font-size:0.75rem; color:var(--text-muted);">Shop Phone Number:</label>
+        <input type="text" id="settingShopPhone" placeholder="e.g. +233 24 123 4567" onchange="updateShopInfoSetting()">
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionAccount">
+    <h4>👤 Account Management</h4>
+    <p id="accountInfoText">Logged in as: <strong>-</strong></p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(changeUsername)">Change Username</button>
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(changeUserPassword)">Change Password</button>
+      <button class="btn btn-small btn-danger" onclick="handleLogout()">Logout Account</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionSync">
+    <h4>🔄 Real-Time Live Sync <span id="syncLockBadge"></span></h4>
+    <p>Enter a Sync Key on all store terminals to automatically synchronize sales and stock across devices.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <input type="text" id="syncKeyInput" placeholder="Enter Sync Key (e.g. shop-room-1)">
+      <div style="display: flex; gap: 6px;">
+        <button class="btn btn-small" style="flex:1;" onclick="demoGuard(connectLiveSyncWithPin)">Connect Store</button>
+        <button class="btn btn-small btn-danger" style="flex:1;" onclick="demoGuard(disconnectLiveSync)">Disconnect</button>
+      </div>
+      <span class="sync-status sync-offline" id="syncBadge">Status: Offline / Local</span>
+
+      <!-- Connected Store / Sync Key List -->
+      <div style="margin-top: 8px;">
+        <label style="font-size:0.75rem; font-weight:bold; color:var(--text-muted);">Connected Store List:</label>
+        <div class="store-list-container" id="connectedStoreList">
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">No store connected yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionSecurity">
+    <h4>🔒 Edit Protection Security <span id="securityLockBadge"></span></h4>
+    <p>Default admin security code is <strong>1234</strong>.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(changeSecurityPin)">Change Security Code</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionReset">
+    <h4>⚠️ System Controls <span id="resetLockBadge"></span></h4>
+    <p>Enable to unlock system wipe buttons.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-warning" id="toggleResetBtn" onclick="demoGuard(toggleResetLock)">Enable Reset Mode</button>
+      <button class="btn btn-small btn-danger" id="clearAllDataBtn" onclick="demoGuard(clearAllData)" disabled>Clear All System Data</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionBackup">
+    <h4>☁️ File Backup Sync <span id="backupLockBadge"></span></h4>
+    <p>Export or import database manually via file.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(exportFullJSON)">📥 Export Backup File</button>
+      <input type="file" id="importJsonInput" accept=".json" style="display:none" onchange="importFullJSON(event)">
+      <button class="btn btn-small" onclick="demoGuard(triggerImportJSON)">📤 Import Backup File</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-container" id="mainApp" style="display:none;">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="top-bar">
+      <div class="header-title-group">
+        <h1 id="appStoreHeader">Azigizaro Enterprise Shop Manager Suite</h1>
+        <p class="subtitle">Offline POS, Stock Control, Receipts & Multi-Device Sync</p>
+      </div>
+      <div class="user-badge-group">
+        <button class="menu-toggle-btn" onclick="toggleSidebar(true)">
+          <span id="headerUserDisplay">👤 User</span> | ⚙️ Menu
+        </button>
+      </div>
+    </div>
+
+    <!-- Demo Account Warning Banner -->
+    <div class="demo-banner" id="demoBanner" style="display:none;">
+      <span>⚠️ <strong>Demo Mode Active:</strong> Settings controls and product editing are locked.</span>
+      <button class="btn btn-small btn-warning" onclick="openAuthModal('subscribe')">🚀 Upgrade to Paid Plan</button>
+    </div>
+
+    <!-- Daily Reset Summary -->
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="stat-label">Today's Revenue</div>
+        <div class="stat-val" id="totalRevenue">GH₵ 0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Items Sold Today</div>
+        <div class="stat-val" id="itemsSold">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Body -->
+  <div class="app-body">
+    <!-- Col 1 -->
+    <div class="column">
+      <div class="section-card">
+        <h2>
+          <span>🛒 Quick Register</span>
+          <button class="btn btn-small btn-danger" onclick="clearCart()">Clear Cart</button>
+        </h2>
+        <div style="margin-bottom: 10px;">
+          <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Select Customer (Optional):</label>
+          <select id="cartCustomer">
+            <option value="">Walk-in Customer</option>
+          </select>
+        </div>
+        
+        <ul class="cart-list" id="cartList"></ul>
+
+        <!-- Enhanced Checkout Calculations -->
+        <div class="cart-summary-box">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span id="cartSubtotalDisplay">GH₵ 0.00</span>
+          </div>
+          <div class="summary-row" style="gap: 8px;">
+            <span>Tax (%):</span>
+            <input type="number" id="cartTaxPercent" value="0" min="0" max="100" step="0.5" style="width: 70px; padding: 4px; text-align: right;" oninput="renderCartSummary()">
+          </div>
+          <div class="summary-row">
+            <span>Tax Amount:</span>
+            <span id="cartTaxAmountDisplay">GH₵ 0.00</span>
+          </div>
+          <div class="summary-row total">
+            <span>Grand Total:</span>
+            <span id="cartTotalDisplay">GH₵ 0.00</span>
+          </div>
+          <div class="summary-row" style="gap: 8px; margin-top: 4px;">
+            <span>Amount Tendered:</span>
+            <input type="number" id="cartAmountTendered" placeholder="0.00" step="0.01" style="width: 110px; padding: 4px; text-align: right;" oninput="renderCartSummary()">
+          </div>
+          <div class="summary-row" style="font-weight: bold;">
+            <span>Change Given:</span>
+            <span id="cartChangeDisplay" style="color: var(--warning);">GH₵ 0.00</span>
+          </div>
+        </div>
+
+        <button class="btn" style="width: 100%;" onclick="checkout()">Complete Sale & View Receipt</button>
+      </div>
+
+      <div class="section-card">
+        <h2>👥 Customer Directory</h2>
+        <div class="form-row">
+          <input type="text" id="cName" placeholder="Customer Name">
+          <input type="text" id="cPhone" placeholder="Phone Number">
+          <button class="btn btn-secondary" onclick="addCustomer()">Add Customer</button>
+        </div>
+        <ul class="cust-list" id="custList"></ul>
+      </div>
+
+      <!-- Transaction Log -->
+      <div class="section-card sales-card-wrapper">
+        <h2>
+          <span>📜 Transaction History</span>
+          <button class="btn btn-small btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
+        </h2>
+        <div class="sales-list" id="salesHistory"></div>
+      </div>
+    </div>
+
+    <!-- Col 2 -->
+    <div class="column">
+      <div class="section-card" style="flex: 1; display: flex; flex-direction: column;">
+        <h2>
+          <span>📦 Product Stock (Ascending A-Z)</span>
+          <button class="btn btn-small btn-danger" onclick="demoGuard(clearAllStock)">Clear Stock</button>
+        </h2>
+        <div class="search-box">
+          <input type="text" id="productSearch" placeholder="🔍 Search product by name..." oninput="renderInventory()">
+        </div>
+        <div class="item-grid" id="productGrid" style="flex:1; overflow-y:auto; padding-right:2px;"></div>
+      </div>
+
+      <div class="section-card">
+        <h2 id="formTitle">🔒➕ Add New Item <span id="addLockBadge"></span></h2>
+        <input type="hidden" id="editProductId">
+        <div class="form-row">
+          <input type="text" id="pName" placeholder="Item Name">
+          <input type="number" id="pPrice" placeholder="Price" step="0.01">
+          <input type="number" id="pStock" placeholder="Qty">
+          <button class="btn" id="saveProductBtn" onclick="demoGuard(saveProduct)">Add Item</button>
+          <button class="btn btn-secondary" id="cancelEditBtn" onclick="resetForm()" style="display:none;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal-content">
+    <div id="receiptContainer">
+      <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 1.1rem; color:#000; text-transform: uppercase;" id="receiptStoreName">ASETENA BIZ SUITE</h3>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color:#333;" id="rStoreAddress">Accra, Ghana</p>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color:#333;" id="rStorePhone">Tel: +233 (0) 24 000 0000</p>
+        <p style="margin: 4px 0 0 0; font-size: 0.78rem; color:#000;" id="rDate"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.78rem; color:#000;" id="rCustomer"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; font-weight:bold; color:#000;" id="rSerial"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.72rem; color:#333;" id="rTransactionId"></p>
+      </div>
+      <div id="rItems" style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;"></div>
+      
+      <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; font-size: 0.82rem; color:#000;">
+        <div style="display: flex; justify-content: space-between;">
+          <span>Subtotal:</span>
+          <span id="rSubtotal">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;" id="rTaxRow">
+          <span>Tax:</span>
+          <span id="rTax">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 0.95rem; margin-top:2px;">
+          <span>TOTAL:</span>
+          <span id="rTotal">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;" id="rTenderedRow">
+          <span>Tendered:</span>
+          <span id="rTendered">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;" id="rChangeRow">
+          <span>Change Given:</span>
+          <span id="rChange">0.00</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; font-size: 0.72rem; color: #555; margin-bottom: 6px;">
+        Thank you for your business!
+      </div>
+
+      <!-- Receipt Barcode Visual Element -->
+      <svg id="receiptBarcode" class="barcode-svg"></svg>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 10px;">
+      <button class="btn" style="flex:1;" onclick="saveReceiptPDF()">Print / Save PDF</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="closeReceipt()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
