@@ -170,7 +170,7 @@
         <h4>Support & Enquiries</h4>
         <p style="margin-bottom:6px;">📍 Accra, Ghana</p>
         <p style="margin-bottom:6px;">✉️ support@azigizaroenterprise.com</p>
-        <p> <a href="tel:2047946116" style="color: var(--text-muted);text-decoration: none;">📞 +233 (0) 24 794 6116</a></p>
+        <p> <a href="tel:0247946116" style="color: var(--text-muted); text-decoration: none;">📞 +233 (0) 24 794 6116</a></p>
       </div>
     </div>
 
@@ -224,7 +224,7 @@
 
     <!-- About Us View -->
     <div id="aboutModalView" class="auth-form" style="display:none; text-align: left; font-size: 0.9rem; line-height: 1.6; color: var(--text-muted);">
-      <p><strong>Azigizaro Enterprise Shop Manager Suite</strong> is engineered specifically to empower Ghanaian and other countries retail shop owners and micro-business managers.</p>
+      <p><strong>Azigizaro Enterprise Shop Manager Suite</strong> is engineered specifically to empower Ghanaian retail shop owners and micro-business managers.</p>
       <p>Our platform resolves daily point-of-sale operational challenges by enabling full offline capability, seamlessly converting local transactions, generating PDF & barcode receipts, and providing real-time multi-device database sync capabilities through Firebase.</p>
     </div>
 
@@ -544,7 +544,7 @@
           </div>
         </div>
 
-        <button class="btn" style="width: 100%;" onclick="checkout()">Complete Sale & View Receipt</button>
+        <button class="btn" style="width: 100%;" onclick="openCheckoutConfirmation()">Complete Sale & View Receipt</button>
       </div>
 
       <div class="section-card">
@@ -591,6 +591,55 @@
           <button class="btn btn-secondary" id="cancelEditBtn" onclick="resetForm()" style="display:none;">Cancel</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT CONFIRMATION MODAL PAGE -->
+<div class="modal-overlay" id="checkoutConfirmModal">
+  <div class="modal-content" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; max-width: 480px; font-family: system-ui, -apple-system, sans-serif;">
+    <div style="border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin:0; color: var(--accent); font-size: 1.2rem;">🛒 Confirm Transaction</h3>
+      <button onclick="closeCheckoutConfirmation()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    
+    <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0; margin-bottom:10px;">Please verify transaction details before processing checkout:</p>
+
+    <!-- Cart Summary Table -->
+    <div id="confirmOrderDetails" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+    </div>
+
+    <!-- Calculations Summary -->
+    <div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Customer:</span>
+        <strong id="confirmCustomerName" style="color:var(--text);">Walk-in Customer</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Subtotal:</span>
+        <span id="confirmSubtotal">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Tax Amount:</span>
+        <span id="confirmTax">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 1.05rem; color: var(--accent); border-top: 1px dashed var(--border); padding-top: 6px;">
+        <span>Grand Total:</span>
+        <span id="confirmTotal">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted); margin-top:4px;">
+        <span>Amount Tendered:</span>
+        <span id="confirmTendered" style="color:var(--info); font-weight:bold;">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Change Due:</span>
+        <span id="confirmChange" style="color:var(--warning); font-weight:bold;">GH₵ 0.00</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeCheckoutConfirmation()">← Go Back</button>
+      <button class="btn" style="flex:1; background: var(--accent);" onclick="processCheckout()">Confirm & Process Payment ✅</button>
     </div>
   </div>
 </div>
@@ -648,5 +697,6 @@
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
