@@ -1,11 +1,11 @@
 
   // Replace with your Firebase Realtime Database URL
   const firebaseConfig = {
-    databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
+   // databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
   };
 
   // Replace with your Paystack Public Key from paystack.com
-  const PAYSTACK_PUBLIC_KEY = "pk_test_83ef5571585074d04c4e27091aa867e1db960ed6"; 
+ // const PAYSTACK_PUBLIC_KEY = "pk_test_83ef5571585074d04c4e27091aa867e1db960ed6"; 
 
   let dbRef = null;
   let isRemoteSync = false;
