@@ -231,10 +231,10 @@
     } else if (view === 'login') {
       document.getElementById('loginForm').style.display = 'flex';
       title.innerText = "🔐 Sign In";
-      subtitle.innerText = `Welcome back! ${username} Enter credentials to access your store.`;
+      subtitle.innerText = `Welcome back! `${username}` Enter credentials to access your store.`;
     } else if (view === 'subscribe') {
       document.getElementById('subscribeForm').style.display = 'flex';
-      title.innerText = "🚀 Subscribe to Azigizaro Enterprise Shop Manager";
+      title.innerText = "🚀 Subscribe to Azigizaro Enterprise";
       subtitle.innerText = "Select a plan & complete Mobile Money payment to register.";
     } else if (view === 'register') {
       document.getElementById('registerForm').style.display = 'flex';
