@@ -230,7 +230,7 @@
     } else if (view === 'login') {
       document.getElementById('loginForm').style.display = 'flex';
       title.innerText = "🔐 Sign In";
-      subtitle.innerText = `Welcome back! ${currentUser} Enter credentials to access your store now.`;
+      subtitle.innerText = `Welcome back! Enter credentials to access your store now.`;
     } else if (view === 'subscribe') {
       document.getElementById('subscribeForm').style.display = 'flex';
       title.innerText = "🚀 Subscribe to Azigizaro Enterprise";
