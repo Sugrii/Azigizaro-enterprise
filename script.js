@@ -234,7 +234,7 @@
       subtitle.innerText = "Welcome back! Enter credentials to access your store.";
     } else if (view === 'subscribe') {
       document.getElementById('subscribeForm').style.display = 'flex';
-      title.innerText = "🚀 Subscribe to Asetena";
+      title.innerText = "🚀 Subscribe to Azigizaro Enterprise Shop Manager";
       subtitle.innerText = "Select a plan & complete Mobile Money payment to register.";
     } else if (view === 'register') {
       document.getElementById('registerForm').style.display = 'flex';
