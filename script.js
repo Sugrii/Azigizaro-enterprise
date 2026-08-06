@@ -231,7 +231,7 @@
     } else if (view === 'login') {
       document.getElementById('loginForm').style.display = 'flex';
       title.innerText = "🔐 Sign In";
-      subtitle.innerText = `Welcome back! ${username} . Enter credentials to access your store.`;
+      subtitle.innerText = `Welcome back! ${username} Enter credentials to access your store.`;
     } else if (view === 'subscribe') {
       document.getElementById('subscribeForm').style.display = 'flex';
       title.innerText = "🚀 Subscribe to Azigizaro Enterprise Shop Manager";
