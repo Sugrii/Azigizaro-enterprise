@@ -1,0 +1,3135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azigizaro Enterprise - Complete Ghanaian Retail & Sales Suite</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- html2pdf.js library for PDF printing and saving -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- JsBarcode library for Receipt Barcode Generation -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+  <!-- Paystack Inline SDK for Mobile Money & Card Payments in Ghana -->
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+
+  <!-- Firebase App & Realtime Database SDKs for Real-Time Cross-Device Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --warning: #f59e0b;
+      --info: #38bdf8;
+    }
+
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* Outer Wrapper for Landing Page & Auth Flow */
+    .auth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 5000;
+      background: linear-gradient(-45deg, #0f172a, #1e1b4b, #064e3b, #0f172a);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Landing Header Navbar */
+    .landing-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand-logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Hero & Information Sections */
+    .landing-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      flex: 1;
+    }
+
+    .hero-section {
+      text-align: center;
+      padding: 40px 10px 30px 10px;
+    }
+
+    .time-greeting {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--info);
+      margin-bottom: 12px;
+    }
+
+    .hero-title {
+      font-size: 2.8rem;
+      font-weight: 900;
+      margin: 0 0 16px 0;
+      background: linear-gradient(to right, #38bdf8, #10b981);
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 750px;
+      margin: 0 auto 30px auto;
+      line-height: 1.6;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn-hero {
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .btn-hero:hover { transform: translateY(-2px); }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .feature-card {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    .feature-card h3 {
+      color: var(--accent);
+      margin-top: 0;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Landing Accordion for FAQs */
+    .faq-item {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .faq-question {
+      padding: 14px 18px;
+      font-weight: bold;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .faq-answer {
+      padding: 14px 18px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+
+    /* Newsletter Section */
+    .newsletter-section {
+      margin-top: 50px;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .newsletter-section h3 {
+      color: var(--accent);
+      font-size: 1.5rem;
+      margin: 0 0 8px 0;
+    }
+
+    .newsletter-section p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin: 0 0 20px 0;
+    }
+
+    .newsletter-form {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      max-width: 500px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+
+    .newsletter-form input {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    /* Modal Form Cards for Auth & Dynamic Info Content */
+    .auth-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 6000;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      backdrop-filter: blur(6px);
+    }
+
+    .auth-card {
+      background: rgba(30, 41, 59, 0.98);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      text-align: center;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .close-modal-btn {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .auth-card h2 {
+      color: var(--accent);
+      margin: 0 0 6px 0;
+      font-size: 1.6rem;
+    }
+
+    .auth-card p.subtitle {
+      color: var(--text-muted);
+      margin: 0 0 20px 0;
+      font-size: 0.85rem;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .auth-form label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: -6px;
+    }
+
+    .auth-links {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+
+    .auth-links a {
+      color: var(--info);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+
+    /* Subscription Plan Option Cards */
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .plan-card {
+      background: #0f172a;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .plan-card:hover, .plan-card.selected {
+      border-color: var(--accent);
+      background: #064e3b;
+    }
+
+    .plan-title { font-size: 0.85rem; font-weight: bold; color: var(--text); }
+    .plan-price { font-size: 1.1rem; font-weight: bold; color: var(--accent); margin-top: 4px; }
+
+    /* Footer Styling */
+    .landing-footer {
+      background: rgba(15, 23, 42, 0.95);
+      border-top: 1px solid var(--border);
+      padding: 30px 20px 20px 20px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: auto;
+    }
+
+    .footer-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .footer-col h4 {
+      color: var(--text);
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+    }
+
+    .footer-col ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .footer-col ul li {
+      margin-bottom: 8px;
+    }
+
+    .footer-col ul li a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      cursor: pointer;
+    }
+
+    .footer-col ul li a:hover {
+      color: var(--accent);
+    }
+
+    .footer-bottom {
+      max-width: 1100px;
+      margin: 0 auto;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* Main App Layout */
+    .app-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 16px;
+    }
+
+    /* Header Bar */
+    .app-header {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-title-group { 
+      text-align: left; 
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .shop-logo-img {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+    h1 { color: var(--accent); margin: 0 0 4px 0; font-size: 1.6rem; }
+    p.subtitle { color: var(--text-muted); margin: 0; font-size: 0.85rem; }
+
+    .user-badge-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .noti-btn {
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1.1rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .noti-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: var(--danger);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: bold;
+      border-radius: 50%;
+      padding: 2px 6px;
+      display: none;
+    }
+
+    .menu-toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1.1rem;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Demo Account Warning Banner */
+    .demo-banner {
+      background: #451a03;
+      border: 1px solid var(--warning);
+      color: #fbbf24;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Summary Bar */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .stat-card { background: var(--card-bg); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-val { font-size: 1.4rem; font-weight: bold; color: var(--accent); margin-top: 2px; }
+
+    /* Sync Indicator Badge */
+    .sync-status {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: bold;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .sync-online { background: #064e3b; color: #34d399; }
+    .sync-offline { background: #451a03; color: #fbbf24; }
+
+    /* Connected Stores List in Settings Drawer */
+    .store-list-container {
+      margin-top: 10px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .store-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      padding: 4px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+    .store-item:last-child { border-bottom: none; }
+    .store-item-name {
+      font-weight: bold;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 140px;
+    }
+
+    /* Viewport Body */
+    .app-body {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .column::-webkit-scrollbar, .sales-list::-webkit-scrollbar { width: 6px; }
+    .column::-webkit-scrollbar-thumb, .sales-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Off-Canvas Sidebar */
+    .sidebar-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.7); display: none; z-index: 2000;
+      transition: opacity 0.3s ease;
+    }
+    .sidebar-drawer {
+      position: fixed; top: 0; right: -340px; width: 320px; height: 100vh;
+      background: var(--card-bg); border-left: 1px solid var(--border);
+      z-index: 2001; padding: 20px; display: flex; flex-direction: column;
+      gap: 15px; overflow-y: auto; transition: right 0.3s ease;
+      box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+    }
+    .sidebar-drawer.open { right: 0; }
+    .sidebar-overlay.open { display: block; }
+
+    .sidebar-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .sidebar-header h3 { margin: 0; color: var(--accent); font-size: 1.1rem; }
+    .close-sidebar-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+
+    .sidebar-section {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .sidebar-section h4 { margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text); }
+    .sidebar-section p { margin: 0 0 10px 0; font-size: 0.78rem; color: var(--text-muted); }
+
+    .demo-disabled-overlay {
+      opacity: 0.5;
+      pointer-events: auto;
+      position: relative;
+    }
+
+    /* Layout Cards */
+    .section-card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
+    h2 { font-size: 1rem; margin-top: 0; margin-bottom: 12px; color: var(--text); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    /* Forms & Inputs */
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 12px; }
+    input, select, textarea {
+      background: #0f172a; border: 1px solid var(--border); color: var(--text);
+      padding: 9px; border-radius: 6px; font-size: 0.85rem; width: 100%;
+    }
+    input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); }
+
+    /* Password Toggle Component Wrapper */
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .password-wrapper input {
+      width: 100%;
+      padding-right: 35px;
+    }
+    .password-toggle-btn {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 4px;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent); color: #000; border: none; padding: 9px 12px;
+      border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s, opacity 0.2s;
+      text-align: center; display: inline-block; font-size: 0.85rem;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-secondary { background: var(--info); color: #0f172a; }
+    .btn-warning { background: var(--warning); color: #000; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: var(--danger-hover); }
+    .btn-small { padding: 5px 8px; font-size: 0.78rem; border-radius: 4px; }
+
+    .search-box { margin-bottom: 12px; }
+
+    /* Product Grid & Cards */
+    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .product-card {
+      background: #0f172a; border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px; display: flex; flex-direction: column; height: auto !important;     
+    }
+    .product-info { cursor: pointer; flex: 1; }
+    .product-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 4px; word-break: break-word; }
+    .product-price { color: var(--accent); font-weight: bold; font-size: 0.85rem; }
+    .product-stock { font-size: 0.75rem; margin-top: 4px; margin-bottom: 8px; }
+    
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+    .badge-in { background: #064e3b; color: #34d399; }
+    .badge-low { background: #451a03; color: #fbbf24; }
+    .badge-out { background: #450a0a; color: #f87171; }
+    .badge-locked { background: #334155; color: #f59e0b; }
+    
+    .product-actions { display: flex; gap: 4px; border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .product-actions button { flex: 1; }
+
+    /* Cart Summary Section */
+    .cart-list { list-style: none; padding: 0; margin: 0 0 12px 0; max-height: 180px; overflow-y: auto; }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .cart-summary-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.82rem;
+    }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; }
+    .summary-row.total { font-weight: bold; font-size: 1rem; color: var(--accent); border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 2px; }
+
+    .cust-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
+    .cust-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+
+    /* Daily History Grouping */
+    .sales-list { max-height: 220px; overflow-y: auto; padding-right: 4px; }
+    .day-group { border-bottom: 1px solid #334155; margin-bottom: 6px; }
+    .day-header { 
+      padding: 8px 6px; cursor: pointer; display: flex; justify-content: space-between; 
+      font-weight: bold; font-size: 0.85rem; color: var(--info); background: #0f172a; 
+      border-radius: 4px; transition: background 0.2s;
+    }
+    .day-header:hover { background: #1e293b; }
+    .day-txns { display: none; padding: 8px 6px; margin-bottom: 6px; border-left: 2px solid var(--info); }
+    .day-txns.open { display: block; }
+    
+    .sales-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #334155; font-size: 0.8rem; color: var(--text-muted); }
+    .sales-item:last-child { border-bottom: none; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 7000; padding: 10px;
+    }
+    .modal-content {
+      background: #fff; color: #000; padding: 20px; border-radius: 8px; width: 100%; max-width: 380px; font-family: monospace; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-height: 90vh; display: flex; flex-direction: column;
+    }
+
+    #receiptContainer {
+      background: #fff; color: #000; padding: 10px; border-radius: 4px; overflow-y: auto; flex: 1;
+    }
+
+    .barcode-svg {
+      display: block;
+      margin: 8px auto 0 auto;
+      max-width: 100%;
+      height: 45px;
+    }
+
+    /* Receipt Table POS Style */
+    .receipt-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+    .receipt-table th, .receipt-table td {
+      padding: 4px 2px;
+      border-bottom: 1px dashed #ddd;
+    }
+    .receipt-table th {
+      border-bottom: 1px solid #000;
+      font-weight: bold;
+    }
+
+    /* Print Overrides & Responsive POS / Mobile / PC Adjustments */
+    @media print {
+      body * { visibility: hidden !important; }
+      #receiptModal, #receiptModal * { visibility: visible !important; }
+      #receiptModal {
+        position: absolute !important;
+        left: 0 !important; top: 0 !important;
+        width: 100% !important; height: auto !important;
+        background: #fff !important; display: block !important;
+      }
+      .modal-content {
+        box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important;
+        max-height: none !important; height: auto !important; overflow: visible !important;
+      }
+      #receiptContainer {
+        overflow: visible !important; height: auto !important; max-height: none !important;
+        width: 80mm !important; /* Forces physical receipt dimensions */
+      }
+      .modal-content button { display: none !important; }
+    }
+
+    /* Thermal POS Printer / Narrow Mobile Page Sizing */
+    @media print and (max-width: 58mm) {
+      body { width: 58mm; margin: 0; padding: 0; }
+      .modal-content { width: 58mm; padding: 2mm !important; }
+      #receiptContainer { font-size: 10px !important; width: 58mm !important; }
+      h3 { font-size: 12px !important; }
+    }
+    @media print and (min-width: 59mm) and (max-width: 80mm) {
+      body { width: 80mm; margin: 0; padding: 0; }
+      .modal-content { width: 80mm; padding: 3mm !important; }
+      #receiptContainer { font-size: 11px !important; width: 80mm !important; }
+      h3 { font-size: 14px !important; }
+    }
+
+    @media (max-width: 820px) {
+      html, body { overflow: auto; height: auto; }
+      .app-container { height: auto; }
+      .app-body { display: flex; flex-direction: column; }
+      .column { overflow-y: visible; }
+      .sales-card-wrapper { order: 999 !important; }
+      .form-row { grid-template-columns: 1fr !important; }
+      .hero-title { font-size: 2rem; }
+    }
+  </style>
+
+  <script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="ruabOU4NCr6skA0gSKDc2";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</head>
+<body>
+
+<!-- Custom Modal Dialog Pop-up Container -->
+<div class="modal-overlay" id="customConfirmModal">
+  <div class="modal-content" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; max-width: 400px; font-family: system-ui, -apple-system, sans-serif; text-align: center;">
+    <h3 id="customConfirmTitle" style="color: var(--accent); margin-top: 0;">Confirmation</h3>
+    <p id="customConfirmMessage" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;"></p>
+    <div id="customConfirmInputWrapper" style="display: none; margin-bottom: 12px;">
+      <div class="password-wrapper">
+        <input type="password" id="customConfirmInput" placeholder="Enter code / password..." style="text-align: center;">
+        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('customConfirmInput', this)">👁️</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button class="btn btn-secondary" id="customConfirmCancelBtn" style="flex: 1;">Cancel</button>
+      <button class="btn" id="customConfirmOkBtn" style="flex: 1;">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Landing Page & Auth Overlay -->
+<div class="auth-overlay" id="authScreen">
+  <!-- Top Navigation Header -->
+  <nav class="landing-nav">
+    <div class="brand-logo">📊 AZIGIZARO ENTERPRISE SHOP MANAGER SUITE</div>
+    <div class="nav-actions">
+      <button class="btn btn-warning btn-small" onclick="openAuthModal('demo')">🎮 Try Demo Account</button>
+      <button class="btn btn-secondary btn-small" onclick="openAuthModal('login')">🔐 Log In</button>
+      <button class="btn btn-small" onclick="openAuthModal('subscribe')">🚀 Start Now</button>
+    </div>
+  </nav>
+
+  <!-- Landing Page Content -->
+  <div class="landing-container">
+    <div class="hero-section">
+      <div class="time-greeting" id="landingTimeGreeting">Good Day!</div>
+      <h1 class="hero-title">Empowering Ghanaian Retail & Business Management</h1>
+      <p class="hero-desc">
+        <strong>Azigizaro Enterprise Shop Manager</strong> is an all-in-one Point-of-Sale (POS), inventory tracker, and sales management solution tailored specifically for micro and small businesses in Ghana. Operate seamlessly offline, track sales in multiple currencies, print instant barcode receipts with PDF support, and sync live across devices.
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="hero-cta-group">
+        <button class="btn-hero btn-warning" onclick="openAuthModal('demo')">🎮 Create Free Demo Shop</button>
+        <button class="btn-hero btn" onclick="openAuthModal('subscribe')">🚀 Start Subscription</button>
+        <button class="btn-hero btn-secondary" onclick="openAuthModal('login')">🔐 Log In</button>
+      </div>
+    </div>
+
+    <!-- Deep Platform Information Cards -->
+    <h2 style="text-align: center; font-size: 1.5rem; margin-top: 20px; color: var(--text);">Why Choose Azigizaro Enterprise Shop Manager?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <h3>🛒 Offline POS Register</h3>
+        <p>Ring up customers effortlessly with cart controls, dynamic stock depletion, tax calculation, change given display, and instantaneous barcode receipt generation.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>📦 Smart Inventory Control</h3>
+        <p>Keep precise tabs on item stock levels. Automatically alerts you on low or out-of-stock items, complete with PIN-protected edit controls to secure inventory.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>📲 Integrated Mobile Money</h3>
+        <p>Seamlessly accepts activations via Paystack supporting MTN Mobile Money, Telecel Cash, and AT Money, ensuring instant Ghanaian currency processing.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>🔄 Multi-Device Cloud Sync</h3>
+        <p>Connect multiple store terminals using custom Sync Keys powered by Firebase Realtime Database. Track transactions from home or the counter simultaneously.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>👥 Customer Directory</h3>
+        <p>Maintain your buyer database with names and phone numbers. Assign transactions directly to walk-in or loyal customers for better transaction history.</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>📜 Financial Logs & Exporting</h3>
+        <p>View daily grouped revenue totals and export comprehensive CSV spreadsheets for accounting, auditing, and tax preparation with one click.</p>
+      </div>
+    </div>
+
+    <!-- Landing Page Interactive FAQ Section -->
+    <div style="margin-top: 50px;">
+      <h2 style="text-align: center; font-size: 1.5rem; color: var(--text); margin-bottom: 20px;">Frequently Asked Questions (FAQ)</h2>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">Does Azigizaro Enterprise work completely offline? <span>+</span></div>
+        <div class="faq-answer">Yes! All inventory, customer records, and transaction logs are stored locally in your browser. You can register sales without an active internet connection.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">How does multi-device real-time sync work? <span>+</span></div>
+        <div class="faq-answer">By entering a unique Store Sync Key in your settings, terminals link via Firebase Realtime Database so sales and stock changes sync live across your devices.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">What Mobile Money networks are supported? <span>+</span></div>
+        <div class="faq-answer">We accept MTN Mobile Money, Telecel Cash, and AT Money directly through integrated Paystack payments in Ghanaian Cedis (GH₵).</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">How do I protect my stock data from unauthorized edits? <span>+</span></div>
+        <div class="faq-answer">The system features built-in Security Code verification (Default: 1234). Cashiers can ring up sales, but editing or deleting stock requires an admin code.</div>
+      </div>
+    </div>
+
+    <!-- Customer Feedback Highlights -->
+    <div style="margin-top: 50px;">
+      <h2 style="text-align: center; font-size: 1.5rem; color: var(--text); margin-bottom: 20px;">What Ghanaian Shop Owners Say</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <p style="font-style: italic;">"This app changed how we track sales at Makola Market. Printing PDF receipts right from my phone is brilliant."</p>
+          <h4 style="color: var(--accent); margin: 12px 0 0 0; text-align: right;">— Yaw Mensah (Retail Merchant)</h4>
+        </div>
+        <div class="feature-card">
+          <p style="font-style: italic;">"The Mobile Money paystack integration made subscription quick. The offline mode saves us during network dropouts."</p>
+          <h4 style="color: var(--accent); margin: 12px 0 0 0; text-align: right;">— Abena Serwaa (Boutique Owner)</h4>
+        </div>
+      </div>
+    </div>
+
+    <!-- Newsletter Section -->
+    <div class="newsletter-section">
+      <h3>📩 Stay Updated with Asetena Business Tips</h3>
+      <p>Subscribe to our newsletter for micro-business growth strategies, retail tips, and feature updates.</p>
+      <form class="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
+        <input type="email" id="newsletterEmail" placeholder="Enter your email address..." required>
+        <button type="submit" class="btn">Subscribe Now</button>
+      </form>
+      <p id="newsletterMsg" style="margin-top: 10px; font-size: 0.85rem; color: var(--accent); display: none;"></p>
+    </div>
+  </div>
+
+  <!-- Functional Footer -->
+  <footer class="landing-footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Azigizaro Enterprise Shop Manager Suite</h4>
+        <p style="font-size: 0.8rem; line-height: 1.5;">Localization-focused retail POS system designed to streamline commerce, revenue management, and inventory sync in Ghana and other countries.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Quick Links & Info</h4>
+        <ul>
+          <li><a onclick="openAuthModal('about')">About Us</a></li>
+          <li><a onclick="openAuthModal('faq')">Frequently Asked Questions</a></li>
+          <li><a onclick="openAuthModal('feedback')">Customer Feedback</a></li>
+          <li><a onclick="openAuthModal('terms')">Terms of Service</a></li>
+          <li><a onclick="openAuthModal('privacy')">Privacy Policy</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Quick Actions</h4>
+        <ul>
+          <li><a onclick="openAuthModal('demo')">Try Demo Shop Free</a></li>
+          <li><a onclick="openAuthModal('subscribe')">Subscribe & Start Now</a></li>
+          <li><a onclick="openAuthModal('login')">Account Sign In</a></li>
+          <li><a onclick="openAuthModal('forgot')">Forgot Password</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Support & Enquiries</h4>
+        <p style="margin-bottom:6px;">📍 Accra, Ghana</p>
+        <p style="margin-bottom:6px;">✉️ support@azigizaroenterprise.com</p>
+        <p> <a href="tel:0247946116" style="color: var(--text-muted); text-decoration: none;">📞 +233 (0) 24 794 6116</a></p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>&copy; <span id="footerYear">2026</span> Azigizaro Enterprise Shop Manager Suite. All Rights Reserved.</div>
+      <div>Status: <span style="color:var(--accent);">● Systems Operational</span></div>
+    </div>
+  </footer>
+</div>
+
+<!-- Modal Dialog Container for Auth Actions & Information Views -->
+<div class="auth-modal" id="authModal">
+  <div class="auth-card">
+    <button class="close-modal-btn" onclick="closeAuthModal()">&times;</button>
+    <h2 id="authModalTitle">Welcome</h2>
+    <p class="subtitle" id="authSubtitle">Please enter your details below.</p>
+
+    <!-- FAQ Modal View -->
+    <div id="faqModalView" class="auth-form" style="display:none;">
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">Does Azigizaro Enterprise work offline? <span>+</span></div>
+        <div class="faq-answer">Yes, sales and inventory are stored on your local device memory using WebStorage, so you can keep working even without internet connection.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">Can I print receipts? <span>+</span></div>
+        <div class="faq-answer">Yes! You can generate formatted receipts with custom barcodes and save or print them as high-quality PDFs.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">What currencies are available? <span>+</span></div>
+        <div class="faq-answer">It supports Ghanaian Cedis (GH₵), US Dollars ($), Euros (€), British Pounds (£), and Nigerian Naira (₦).</div>
+      </div>
+    </div>
+
+    <!-- Feedback Form Modal View -->
+    <div id="feedbackModalView" class="auth-form" style="display:none;">
+      <div>
+        <label>Your Name</label>
+        <input type="text" id="fbName" placeholder="Enter your full name">
+      </div>
+      <div>
+        <label>Email Address</label>
+        <input type="email" id="fbEmail" placeholder="Enter your email">
+      </div>
+      <div>
+        <label>Feedback / Testimonial</label>
+        <textarea id="fbMessage" rows="4" placeholder="Share your experience or suggestions..."></textarea>
+      </div>
+      <button class="btn" style="width:100%;" onclick="handleFeedbackSubmit(event)">Submit Feedback</button>
+      <p id="fbStatus" style="font-size:0.8rem; color:var(--accent); text-align:center; display:none; margin: 4px 0 0 0;"></p>
+    </div>
+
+    <!-- About Us View -->
+    <div id="aboutModalView" class="auth-form" style="display:none; text-align: left; font-size: 0.9rem; line-height: 1.6; color: var(--text-muted);">
+      <p><strong>Azigizaro Enterprise Shop Manager Suite</strong> is engineered specifically to empower Ghanaian retail shop owners and micro-business managers.</p>
+      <p>Our platform resolves daily point-of-sale operational challenges by enabling full offline capability, seamlessly converting local transactions, generating PDF & barcode receipts, and providing real-time multi-device database sync capabilities through Firebase.</p>
+    </div>
+
+    <!-- Terms of Service View -->
+    <div id="termsModalView" class="auth-form" style="display:none; text-align: left; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted);">
+      <h4 style="color:var(--text); margin:0 0 6px 0;">1. License & Account Access</h4>
+      <p style="margin-top:0;">Subscriptions grant non-transferable rights to manage point-of-sale activities. Users remain responsible for protecting their security PINs and credentials.</p>
+      <h4 style="color:var(--text); margin:10px 0 6px 0;">2. Data Storage</h4>
+      <p style="margin-top:0;">Local data is preserved in your device browser storage. Multi-device sync uses encrypted key parameters via cloud databases.</p>
+    </div>
+
+    <!-- Privacy Policy View -->
+    <div id="privacyModalView" class="auth-form" style="display:none; text-align: left; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted);">
+      <h4 style="color:var(--text); margin:0 0 6px 0;">Data Protection & Security</h4>
+      <p style="margin-top:0;">We prioritize business privacy. Personal details collected during registration or payments via Paystack are processed securely and strictly used for service provisioning.</p>
+    </div>
+
+    <!-- Create Free Demo Account View -->
+    <div id="demoForm" class="auth-form" style="display:none;">
+      <div>
+        <label>Shop / Business Name</label>
+        <input type="text" id="demoShopName" placeholder="e.g. Ama Enterprise Demo">
+      </div>
+      <div>
+        <label>Your Name</label>
+        <input type="text" id="demoUserName" placeholder="e.g. Ama Serwaa">
+      </div>
+      <button class="btn btn-warning" style="width: 100%; margin-top: 8px;" onclick="handleCreateDemoAccount()">🎮 Launch Free Demo Shop</button>
+      
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('subscribe')">Ready to buy full version? Subscribe Here</a>
+      </div>
+    </div>
+
+    <!-- Login View -->
+    <div id="loginForm" class="auth-form">
+      <div>
+        <label>Username or Email</label>
+        <input type="text" id="loginUser" placeholder="Enter username or registered email">
+      </div>
+      <div>
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="loginPass" placeholder="Enter password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPass', this)">👁️</button>
+        </div>
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px;" onclick="handleLogin()">Sign In</button>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 6px; background: #ea4335; color: white;" onclick="handleGoogleSignIn()">🌐 Continue with Google</button>
+      
+      <div class="auth-links">
+        <a onclick="switchAuthView('forgot')">Forgot Password?</a>
+        <a onclick="switchAuthView('subscribe')">Create Account</a>
+      </div>
+    </div>
+
+    <!-- Step 1: Subscription & MoMo Payment Screen -->
+    <div id="subscribeForm" class="auth-form" style="display:none;">
+      <label>Choose Subscription Plan:</label>
+      <div class="plan-grid">
+        <div class="plan-card selected" id="planMonthly" onclick="selectPlan(100, 'monthly', this)">
+          <div class="plan-title">Monthly</div>
+          <div class="plan-price">GH₵ 100.00</div>
+        </div>
+        <div class="plan-card" id="planThreeMonths" onclick="selectPlan(280, '3months', this)">
+          <div class="plan-title">3 Months</div>
+          <div class="plan-price">GH₵ 280.00</div>
+        </div>
+        <div class="plan-card" id="planYearly" onclick="selectPlan(1080, 'yearly', this)">
+          <div class="plan-title">Yearly</div>
+          <div class="plan-price">GH₵ 1080.00</div>
+        </div>
+      </div>
+
+      <div>
+        <label>Full Name</label>
+        <input type="text" id="subFullName" placeholder="e.g. Ama Serwaa">
+      </div>
+      <div>
+        <label>Email Address</label>
+        <input type="email" id="subEmail" placeholder="e.g. ama@gmail.com">
+      </div>
+      <div>
+        <label>Mobile Money Phone Number</label>
+        <input type="tel" id="subPhone" placeholder="e.g. 024XXXXXXX">
+      </div>
+      <div>
+        <label>Network Provider</label>
+        <select id="subMomoNetwork">
+          <option value="mtn">MTN Mobile Money</option>
+          <option value="telecel">Telecel Cash</option>
+          <option value="at">AT Money</option>
+        </select>
+      </div>
+
+      <button class="btn" style="width: 100%; margin-top: 8px; background: #38bdf8; color: #0f172a;" onclick="processMoMoPayment()">
+        💳 Pay GH₵ <span id="payAmountDisplay">100.00</span> via Paystack / MoMo
+      </button>
+
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('login')">Already have an account? Sign In</a>
+      </div>
+    </div>
+
+    <!-- Step 2: Account Registration View (Unlocked after Payment) -->
+    <div id="registerForm" class="auth-form" style="display:none;">
+      <div id="paymentVerifiedBadge" style="background: #064e3b; padding: 8px; border-radius: 6px; font-size: 0.78rem; color: #34d399; margin-bottom: 6px; text-align: center; display:none;">
+        ✅ Payment Verified! Complete your shop details & login credentials below.
+      </div>
+      <div>
+        <label>Preferred Shop / Business Name</label>
+        <input type="text" id="regShopName" placeholder="e.g. Akosua Fabrics Store">
+      </div>
+      <div>
+        <label>Email Address</label>
+        <input type="email" id="regEmail" placeholder="e.g. ama@gmail.com">
+      </div>
+      <div>
+        <label>Create Username</label>
+        <input type="text" id="regUser" placeholder="Choose username">
+      </div>
+      <div>
+        <label>Create Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="regPass" placeholder="Choose password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('regPass', this)">👁️</button>
+        </div>
+      </div>
+      <div>
+        <label>Security Answer (for recovery)</label>
+        <input type="text" id="regSecurity" placeholder="What is your favorite color?">
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px;" onclick="handleRegister()">Complete Registration</button>
+      
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('subscribe')">Need to subscribe first? Click here</a>
+      </div>
+    </div>
+
+    <!-- Forgot Password View -->
+    <div id="forgotForm" class="auth-form" style="display:none;">
+      <div>
+        <label>Your Username or Email</label>
+        <input type="text" id="recUser" placeholder="Enter username or email">
+      </div>
+      <div>
+        <label>Security Question Answer</label>
+        <input type="text" id="recSecurity" placeholder="What is your favorite color?">
+      </div>
+      <div>
+        <label>New Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="recNewPass" placeholder="Enter new password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('recNewPass', this)">👁️</button>
+        </div>
+      </div>
+      <button class="btn btn-warning" style="width: 100%; margin-top: 8px;" onclick="handleResetPassword()">Reset Password</button>
+
+      <div class="auth-links" style="justify-content: center;">
+        <a onclick="switchAuthView('login')">Back to Sign In</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar Settings -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+<div class="sidebar-drawer" id="sidebarDrawer">
+  <div class="sidebar-header">
+    <h3>⚙️ Settings & Controls</h3>
+    <button class="close-sidebar-btn" onclick="toggleSidebar(false)">&times;</button>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionStoreManagement">
+    <h4>🏪 Store Management</h4>
+    <p>Rename or permanently erase your store profile.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(() => verifyAuthPass(renameStore))">✏️ Rename Store</button>
+      <button class="btn btn-small btn-danger" onclick="demoGuard(() => verifyAdminPass(deleteStore))">🗑️ Delete Store</button>
+      <button class="btn btn-small btn-danger" style="background:#b91c1c;" onclick="demoGuard(() => verifyAdminPass(deleteAccountPermanent))">⚠️ Delete Account Completely</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionCashiers">
+    <h4>👥 Cashier Management</h4>
+    <p>Create separate credentials for your counter cashiers.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <input type="text" id="cashierNameInput" placeholder="Cashier Username">
+      <div class="password-wrapper">
+        <input type="password" id="cashierPassInput" placeholder="Cashier Password">
+        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('cashierPassInput', this)">👁️</button>
+      </div>
+      <button class="btn btn-small" onclick="demoGuard(() => verifyAdminPass(createCashierAccount))">Add Cashier Account</button>
+      <div id="cashierListDisplay" style="margin-top: 6px; font-size: 0.75rem; max-height: 80px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionLogo">
+    <h4>🖼️ Shop Logo Upload</h4>
+    <p>Upload a custom logo to display on your dashboard & printed receipts.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <input type="file" id="shopLogoInput" accept="image/*" onchange="verifyAuthPass(() => handleLogoUpload(event))">
+      <button class="btn btn-small btn-danger" onclick="verifyAuthPass(removeShopLogo)">Remove Logo</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionCurrency">
+    <h4>💱 Store Currency & Info</h4>
+    <p>Configure shop currency, location, and telephone contact for receipts.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div>
+        <label style="font-size:0.75rem; color:var(--text-muted);">Active Currency Symbol:</label>
+        <select id="currencySelector" onchange="verifyAuthPass(updateCurrencySetting)">
+          <option value="GH₵">GH₵ - Ghanaian Cedi</option>
+          <option value="$">$ - US Dollar</option>
+          <option value="€">€ - Euro</option>
+          <option value="£">£ - British Pound</option>
+          <option value="₦">₦ - Nigerian Naira</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.75rem; color:var(--text-muted);">Shop Location Address:</label>
+        <input type="text" id="settingShopAddress" placeholder="e.g. Makola Market, Accra" onchange="verifyAuthPass(updateShopInfoSetting)">
+      </div>
+      <div>
+        <label style="font-size:0.75rem; color:var(--text-muted);">Shop Phone Number:</label>
+        <input type="text" id="settingShopPhone" placeholder="e.g. +233 24 123 4567" onchange="verifyAuthPass(updateShopInfoSetting)">
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionAccount">
+    <h4>👤 Account Management</h4>
+    <p id="accountInfoText">Logged in as: <strong>-</strong></p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(() => verifyAuthPass(changeUsername))">Change Username</button>
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(() => verifyAuthPass(changeUserPassword))">Change Password</button>
+      <button class="btn btn-small btn-danger" onclick="handleLogout()">Logout Account</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionSync">
+    <h4>🔄 Real-Time Live Sync <span id="syncLockBadge"></span></h4>
+    <p>Enter a Sync Key on all store terminals to automatically synchronize sales and stock across devices.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <input type="text" id="syncKeyInput" placeholder="Enter Sync Key (e.g. shop-room-1)">
+      <div style="display: flex; gap: 6px;">
+        <button class="btn btn-small" style="flex:1;" onclick="demoGuard(() => verifyAuthPass(connectLiveSyncWithPin))">Connect Store</button>
+        <button class="btn btn-small btn-danger" style="flex:1;" onclick="demoGuard(() => verifyAuthPass(disconnectLiveSync))">Disconnect</button>
+      </div>
+      <span class="sync-status sync-offline" id="syncBadge">Status: Offline / Local</span>
+
+      <!-- Connected Store / Sync Key List -->
+      <div style="margin-top: 8px;">
+        <label style="font-size:0.75rem; font-weight:bold; color:var(--text-muted);">Connected Store List:</label>
+        <div class="store-list-container" id="connectedStoreList">
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">No store connected yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionSecurity">
+    <h4>🔒 Edit Protection Security <span id="securityLockBadge"></span></h4>
+    <p>Default admin security code is <strong>1234</strong>.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(() => verifyAdminPass(changeSecurityPin))">Change Security Code</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionReset">
+    <h4>⚠️ System Controls <span id="resetLockBadge"></span></h4>
+    <p>Enable to unlock system wipe buttons.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-warning" id="toggleResetBtn" onclick="demoGuard(() => verifyAdminPass(toggleResetLock))">Enable Reset Mode</button>
+      <button class="btn btn-small btn-danger" id="clearAllDataBtn" onclick="demoGuard(() => verifyAdminPass(clearAllData))" disabled>Clear All System Data</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebarSectionBackup">
+    <h4>☁️ File Backup Sync <span id="backupLockBadge"></span></h4>
+    <p>Export or import database manually via file.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-small btn-secondary" onclick="demoGuard(() => verifyAuthPass(exportFullJSON))">📥 Export Backup File</button>
+      <input type="file" id="importJsonInput" accept=".json" style="display:none" onchange="verifyAuthPass((e) => importFullJSON(e))">
+      <button class="btn btn-small" onclick="demoGuard(() => verifyAuthPass(triggerImportJSON))">📤 Import Backup File</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-container" id="mainApp" style="display:none;">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="top-bar">
+      <div class="header-title-group">
+        <img id="appShopLogo" class="shop-logo-img" src="" alt="Shop Logo" style="display: none;">
+        <div>
+          <h1 id="appStoreHeader">Azigizaro Enterprise Shop Manager Suite</h1>
+          <p class="subtitle" id="dashboardGreeting">Welcome to your shop dashboard!</p>
+        </div>
+      </div>
+      <div class="user-badge-group">
+        <button class="noti-btn" onclick="toggleNotificationsModal()">
+          🔔 <span class="noti-badge" id="notificationBadge">0</span>
+        </button>
+        <button class="menu-toggle-btn" onclick="toggleSidebar(true)">
+          <span id="headerUserDisplay">👤 User</span> | ⚙️ Menu
+        </button>
+      </div>
+    </div>
+
+    <!-- Demo Account Warning Banner -->
+    <div class="demo-banner" id="demoBanner" style="display:none;">
+      <span>⚠️ <strong>Demo Mode Active:</strong> Settings controls and product editing are locked.</span>
+      <button class="btn btn-small btn-warning" onclick="openAuthModal('subscribe')">🚀 Upgrade to Paid Plan</button>
+    </div>
+
+    <!-- Daily Reset Summary -->
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="stat-label">Today's Revenue</div>
+        <div class="stat-val" id="totalRevenue">GH₵ 0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Physical Cash Balance</div>
+        <div class="stat-val" id="cashBalance">GH₵ 0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">MoMo Balance</div>
+        <div class="stat-val" id="momoBalance">GH₵ 0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Items Sold Today</div>
+        <div class="stat-val" id="itemsSold">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Body -->
+  <div class="app-body">
+    <!-- Col 1 -->
+    <div class="column">
+      <div class="section-card">
+        <h2>
+          <span>🛒 Quick Register</span>
+          <button class="btn btn-small btn-danger" onclick="clearCart()">Clear Cart</button>
+        </h2>
+        <div style="margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; gap: 8px;">
+            <div style="flex:1;">
+              <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Select Customer (Optional):</label>
+              <select id="cartCustomer">
+                <option value="">Walk-in Customer</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Payment Method:</label>
+              <select id="cartPaymentMethod" onchange="toggleMomoNetworkField()">
+                <option value="Physical Cash">Physical Cash</option>
+                <option value="Mobile Money">Mobile Money (MoMo)</option>
+              </select>
+            </div>
+          </div>
+          <div id="cartMomoNetworkWrapper" style="display:none;">
+            <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Select Network Operator:</label>
+            <select id="cartMomoNetwork">
+              <option value="MTN Mobile Money">MTN Mobile Money</option>
+              <option value="Telecel Cash">Telecel Cash</option>
+              <option value="AT Money">AT Money</option>
+            </select>
+          </div>
+        </div>
+        
+        <ul class="cart-list" id="cartList"></ul>
+
+        <!-- Enhanced Checkout Calculations -->
+        <div class="cart-summary-box">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span id="cartSubtotalDisplay">GH₵ 0.00</span>
+          </div>
+          <div class="summary-row" style="gap: 8px;">
+            <span>Tax (%):</span>
+            <input type="number" id="cartTaxPercent" value="0" min="0" max="100" step="0.5" style="width: 70px; padding: 4px; text-align: right;" oninput="renderCartSummary()">
+          </div>
+          <div class="summary-row">
+            <span>Tax Amount:</span>
+            <span id="cartTaxAmountDisplay">GH₵ 0.00</span>
+          </div>
+          <div class="summary-row total">
+            <span>Grand Total:</span>
+            <span id="cartTotalDisplay">GH₵ 0.00</span>
+          </div>
+          <div class="summary-row" style="gap: 8px; margin-top: 4px;">
+            <span>Amount Tendered:</span>
+            <input type="number" id="cartAmountTendered" placeholder="0.00" step="0.01" style="width: 110px; padding: 4px; text-align: right;" oninput="renderCartSummary()">
+          </div>
+          <div class="summary-row" style="font-weight: bold;">
+            <span>Change Given:</span>
+            <span id="cartChangeDisplay" style="color: var(--warning);">GH₵ 0.00</span>
+          </div>
+        </div>
+
+        <button class="btn" style="width: 100%;" onclick="openCheckoutConfirmation()">Complete Sale & View Receipt</button>
+      </div>
+
+      <div class="section-card">
+        <h2>👥 Customer Directory</h2>
+        <div class="form-row">
+          <input type="text" id="cName" placeholder="Customer Name">
+          <input type="text" id="cPhone" placeholder="Phone Number">
+          <button class="btn btn-secondary" onclick="addCustomer()">Add Customer</button>
+        </div>
+        <ul class="cust-list" id="custList"></ul>
+      </div>
+
+      <!-- Transaction Log -->
+      <div class="section-card sales-card-wrapper">
+        <h2>
+          <span>📜 Transaction History</span>
+          <div style="display:flex; gap:4px; flex-wrap:wrap;">
+            <button class="btn btn-small btn-secondary" onclick="exportCSV('all')">Export All</button>
+            <button class="btn btn-small btn-secondary" onclick="exportCSV('Cash')">Export Cash</button>
+            <button class="btn btn-small btn-secondary" onclick="exportCSV('MoMo')">Export MoMo</button>
+          </div>
+        </h2>
+        <div style="margin-bottom: 8px;">
+          <select id="txnHistoryFilter" onchange="renderSalesHistory()" style="font-size:0.8rem; padding:4px;">
+            <option value="all">All Transactions</option>
+            <option value="Cash">Physical Cash Transactions</option>
+            <option value="MoMo">Mobile Money Transactions</option>
+          </select>
+        </div>
+        <div class="sales-list" id="salesHistory"></div>
+      </div>
+    </div>
+
+    <!-- Col 2 -->
+    <div class="column">
+      <div class="section-card" style="flex: 1; display: flex; flex-direction: column;">
+        <h2>
+          <span>📦 Product Stock (Ascending A-Z)</span>
+          <button class="btn btn-small btn-danger" onclick="demoGuard(clearAllStockWithAdminPass)">Clear Stock</button>
+        </h2>
+        <div class="search-box">
+          <input type="text" id="productSearch" placeholder="🔍 Search product by name..." oninput="renderInventory()">
+        </div>
+        <div class="item-grid" id="productGrid" style="flex:1; overflow-y:auto; padding-right:2px;"></div>
+      </div>
+
+      <!-- Production Stock & Stock Features Section -->
+      <div class="section-card">
+        <h2>
+          <span>🏭 Production Stock & Inventory Actions</span>
+          <span style="font-size: 0.75rem; color: var(--warning);">🔒 Admin Password Required</span>
+        </h2>
+        <div class="form-row">
+          <button class="btn btn-small btn-secondary" onclick="adminRestockAll()">⚡ Restock All Items (+10)</button>
+          <button class="btn btn-small btn-warning" onclick="adminBatchPriceUpdate()">🏷️ Batch Price Update</button>
+          <button class="btn btn-small btn-secondary" onclick="adminAuditStock()">📋 Audit Stock Report</button>
+        </div>
+      </div>
+
+      <div class="section-card" id="addProductCardContainer">
+        <h2 id="formTitle">🔒➕ Add New Item <span id="addLockBadge"></span></h2>
+        <input type="hidden" id="editProductId">
+        <div class="form-row">
+          <input type="text" id="pName" placeholder="Item Name">
+          <input type="number" id="pPrice" placeholder="Price" step="0.01">
+          <input type="number" id="pStock" placeholder="Qty">
+          <button class="btn" id="saveProductBtn" onclick="demoGuard(saveProductWithAdminPass)">Add Item</button>
+          <button class="btn btn-secondary" id="cancelEditBtn" onclick="resetForm()" style="display:none;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT CONFIRMATION MODAL PAGE -->
+<div class="modal-overlay" id="checkoutConfirmModal">
+  <div class="modal-content" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; max-width: 480px; font-family: system-ui, -apple-system, sans-serif;">
+    <div style="border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin:0; color: var(--accent); font-size: 1.2rem;">🛒 Confirm Transaction</h3>
+      <button onclick="closeCheckoutConfirmation()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    
+    <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0; margin-bottom:10px;">Please verify transaction details before processing checkout:</p>
+
+    <!-- Cart Summary Table -->
+    <div id="confirmOrderDetails" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+    </div>
+
+    <!-- Calculations Summary -->
+    <div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Customer:</span>
+        <strong id="confirmCustomerName" style="color:var(--text);">Walk-in Customer</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Payment Method:</span>
+        <strong id="confirmPaymentMethod" style="color:var(--info);">Physical Cash</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Subtotal:</span>
+        <span id="confirmSubtotal">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Tax Amount:</span>
+        <span id="confirmTax">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 1.05rem; color: var(--accent); border-top: 1px dashed var(--border); padding-top: 6px;">
+        <span>Grand Total:</span>
+        <span id="confirmTotal">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted); margin-top:4px;">
+        <span>Amount Tendered:</span>
+        <span id="confirmTendered" style="color:var(--info); font-weight:bold;">GH₵ 0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+        <span>Change Due:</span>
+        <span id="confirmChange" style="color:var(--warning); font-weight:bold;">GH₵ 0.00</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeCheckoutConfirmation()">← Go Back</button>
+      <button class="btn" style="flex:1; background: var(--accent);" onclick="processCheckout()">Confirm & Process Payment ✅</button>
+    </div>
+  </div>
+</div>
+
+<!-- Audit Stock Report Modal -->
+<div class="modal-overlay" id="auditReportModal">
+  <div class="modal-content" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; max-width: 650px; font-family: system-ui, -apple-system, sans-serif;">
+    <div style="border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin:0; color: var(--accent); font-size: 1.2rem;">📋 Complete Audit Stock Report</h3>
+      <button onclick="closeAuditReport()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    
+    <div id="auditReportDetails" style="max-height: 350px; overflow-y: auto; margin-bottom: 12px; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="exportAuditReportCSV()">📥 Export Audit CSV</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="closeAuditReport()">Close Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal-content">
+    <div id="receiptContainer">
+      <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+        <img id="receiptLogoImg" src="" alt="Logo" style="max-width: 60px; max-height: 60px; margin-bottom: 4px; display: none;">
+        <h3 style="margin: 0; font-size: 1.1rem; color:#000; text-transform: uppercase;" id="receiptStoreName">ASETENA BIZ SUITE</h3>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color:#333;" id="rStoreAddress">Accra, Ghana</p>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color:#333;" id="rStorePhone">Tel: +233 (0) 24 000 0000</p>
+        <p style="margin: 2px 0 0 0; font-size: 0.78rem; font-weight:bold; color:#000;" id="rCashierName"></p>
+        <p style="margin: 4px 0 0 0; font-size: 0.78rem; color:#000;" id="rDate"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.78rem; color:#000;" id="rCustomer"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; font-weight:bold; color:#000;" id="rPaymentMethod"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.75rem; font-weight:bold; color:#000;" id="rSerial"></p>
+        <p style="margin: 2px 0 0 0; font-size: 0.72rem; color:#333;" id="rTransactionId"></p>
+      </div>
+      <div id="rItems" style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;"></div>
+      
+      <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; font-size: 0.82rem; color:#000;">
+        <div style="display: flex; justify-content: space-between;">
+          <span>Subtotal:</span>
+          <span id="rSubtotal">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;" id="rTaxRow">
+          <span>Tax:</span>
+          <span id="rTax">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 0.95rem; margin-top:2px;">
+          <span>TOTAL:</span>
+          <span id="rTotal">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;" id="rTenderedRow">
+          <span>Tendered:</span>
+          <span id="rTendered">0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;" id="rChangeRow">
+          <span>Change Given:</span>
+          <span id="rChange">0.00</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; font-size: 0.72rem; color: #555; margin-bottom: 6px;">
+        Thank you for your business!
+      </div>
+
+      <!-- Receipt Barcode Visual Element -->
+      <svg id="receiptBarcode" class="barcode-svg"></svg>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 10px;">
+      <button class="btn" style="flex:1;" onclick="printReceiptDirect()">🖨️ Print POS Receipt</button>
+      <button class="btn btn-secondary" style="flex:1;" onclick="saveReceiptPDF()">📄 Save PDF</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="closeReceipt()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notifications Log Modal -->
+<div class="modal-overlay" id="notificationsModal">
+  <div class="modal-content" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; max-width: 440px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:10px;">
+      <h3 style="margin:0; color:var(--accent);">🔔 Activity & Dashboard Notifications</h3>
+      <button onclick="toggleNotificationsModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    <div id="notificationsList" style="max-height: 250px; overflow-y: auto; text-align: left; font-size: 0.8rem; display:flex; flex-direction:column; gap:6px;">
+      <p style="color:var(--text-muted); text-align:center;">No recent dashboard changes.</p>
+    </div>
+    <button class="btn btn-danger btn-small" style="margin-top:12px;" onclick="clearNotifications()">Clear All Notifications</button>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    databaseURL: "https://azigizaro-enterprise-default-rtdb.firebaseio.com/"
+  };
+
+  const PAYSTACK_PUBLIC_KEY = "pk_test_83ef5571585074d04c4e27091aa867e1db960ed6"; 
+
+  let dbRef = null;
+  let isRemoteSync = false;
+  let syncKey = '';
+  let connectedStores = [];
+  let selectedPlanAmount = 100;
+  let selectedPlanType = 'monthly';
+
+  if (window.firebase && !firebase.apps.length) {
+    try {
+      firebase.initializeApp(firebaseConfig);
+    } catch(e) { console.error("Firebase Initialization Error", e); }
+  }
+
+  // Custom Modal Promise Wrapper
+  function showCustomModal(message, type = "alert", defaultValue = "") {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('customConfirmModal');
+      const title = document.getElementById('customConfirmTitle');
+      const msg = document.getElementById('customConfirmMessage');
+      const inputWrapper = document.getElementById('customConfirmInputWrapper');
+      const input = document.getElementById('customConfirmInput');
+      const okBtn = document.getElementById('customConfirmOkBtn');
+      const cancelBtn = document.getElementById('customConfirmCancelBtn');
+
+      msg.innerText = message;
+      input.value = defaultValue;
+
+      if (type === "prompt") {
+        title.innerText = "Security / Input Required";
+        inputWrapper.style.display = "block";
+        cancelBtn.style.display = "inline-block";
+      } else if (type === "confirm") {
+        title.innerText = "Confirmation";
+        inputWrapper.style.display = "none";
+        cancelBtn.style.display = "inline-block";
+      } else {
+        title.innerText = "Notice";
+        inputWrapper.style.display = "none";
+        cancelBtn.style.display = "none";
+      }
+
+      modal.style.display = "flex";
+
+      const handleOk = () => {
+        cleanup();
+        resolve(type === "prompt" ? input.value : true);
+      };
+
+      const handleCancel = () => {
+        cleanup();
+        resolve(type === "prompt" ? null : false);
+      };
+
+      function cleanup() {
+        modal.style.display = "none";
+        okBtn.removeEventListener('click', handleOk);
+        cancelBtn.removeEventListener('click', handleCancel);
+      }
+
+      okBtn.addEventListener('click', handleOk);
+      cancelBtn.addEventListener('click', handleCancel);
+    });
+  }
+
+  function alert(msg) { return showCustomModal(msg, "alert"); }
+  function confirm(msg) { return showCustomModal(msg, "confirm"); }
+  function prompt(msg, defaultVal = "") { return showCustomModal(msg, "prompt", defaultVal); }
+
+  function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input) {
+      if (input.type === "password") {
+        input.type = "text";
+        btn.innerText = "🙈";
+      } else {
+        input.type = "password";
+        btn.innerText = "👁️";
+      }
+    }
+  }
+
+  // Global Sync System across devices
+  function syncStateToFirebase() {
+    if (!syncKey || !window.firebase || !firebase.database) return;
+    try {
+      const globalDbRef = firebase.database().ref('shared_stores/' + syncKey);
+      isRemoteSync = true;
+      globalDbRef.set({
+        inventory,
+        customers,
+        salesLog,
+        notifications,
+        shopLogoData,
+        securityPin,
+        currencySymbol,
+        shopAddress,
+        shopPhone,
+        receiptSerialCounter,
+        users,
+        updatedAt: Date.now()
+      }).then(() => {
+        isRemoteSync = false;
+      }).catch(err => {
+        isRemoteSync = false;
+        console.error("Firebase Sync Error", err);
+      });
+    } catch(e) {
+      isRemoteSync = false;
+      console.error(e);
+    }
+  }
+
+  const defaultUsers = [
+    { username: "admin", password: "123", security: "blue", shopName: "Asetena Main Shop", email: "admin@asetenabiz.com", isDemo: false, isPaid: true, cashiers: [] }
+  ];
+
+  let users = JSON.parse(localStorage.getItem('azigizaro_users')) || defaultUsers;
+  let currentUser = JSON.parse(localStorage.getItem('azigizaro_active_user')) || null;
+  let currentCashier = JSON.parse(localStorage.getItem('azigizaro_active_cashier')) || null;
+  let inventory = JSON.parse(localStorage.getItem('azigizaro_inventory')) || [];
+  let customers = JSON.parse(localStorage.getItem('azigizaro_customers')) || [];
+  let salesLog = JSON.parse(localStorage.getItem('azigizaro_salesLog')) || [];
+  let notifications = JSON.parse(localStorage.getItem('azigizaro_notifications')) || [];
+  let cart = [];
+  let securityPin = localStorage.getItem('azigizaro_security_pin') || "1234";
+  let currencySymbol = localStorage.getItem('azigizaro_currency') || "GH₵";
+  let shopAddress = localStorage.getItem('azigizaro_shop_address') || "Accra, Ghana";
+  let shopPhone = localStorage.getItem('azigizaro_shop_phone') || "+233 (0) 24 000 0000";
+  let shopLogoData = localStorage.getItem('azigizaro_shop_logo') || "";
+  let receiptSerialCounter = parseInt(localStorage.getItem('azigizaro_serial_counter')) || 1001;
+  let isResetModeEnabled = false;
+
+  function saveData() {
+    localStorage.setItem('azigizaro_users', JSON.stringify(users));
+    localStorage.setItem('azigizaro_inventory', JSON.stringify(inventory));
+    localStorage.setItem('azigizaro_customers', JSON.stringify(customers));
+    localStorage.setItem('azigizaro_salesLog', JSON.stringify(salesLog));
+    localStorage.setItem('azigizaro_notifications', JSON.stringify(notifications));
+    localStorage.setItem('azigizaro_security_pin', securityPin);
+    localStorage.setItem('azigizaro_currency', currencySymbol);
+    localStorage.setItem('azigizaro_shop_address', shopAddress);
+    localStorage.setItem('azigizaro_shop_phone', shopPhone);
+    localStorage.setItem('azigizaro_shop_logo', shopLogoData);
+    localStorage.setItem('azigizaro_serial_counter', receiptSerialCounter);
+    if (currentUser) localStorage.setItem('azigizaro_active_user', JSON.stringify(currentUser));
+    if (currentCashier) localStorage.setItem('azigizaro_active_cashier', JSON.stringify(currentCashier));
+    syncStateToFirebase();
+  }
+
+  function listenToFirebaseSync() {
+    if (!syncKey || !window.firebase || !firebase.database) return;
+    const globalDbRef = firebase.database().ref('shared_stores/' + syncKey);
+    globalDbRef.on('value', (snapshot) => {
+      if (isRemoteSync) return;
+      const data = snapshot.val();
+      if (data) {
+        if (data.inventory) inventory = data.inventory;
+        if (data.customers) customers = data.customers;
+        if (data.salesLog) salesLog = data.salesLog;
+        if (data.notifications) notifications = data.notifications;
+        if (data.shopLogoData !== undefined) shopLogoData = data.shopLogoData;
+        if (data.securityPin) securityPin = data.securityPin;
+        if (data.currencySymbol) currencySymbol = data.currencySymbol;
+        if (data.shopAddress) shopAddress = data.shopAddress;
+        if (data.shopPhone) shopPhone = data.shopPhone;
+        if (data.receiptSerialCounter) receiptSerialCounter = data.receiptSerialCounter;
+        if (data.users) {
+          users = data.users;
+          if (currentUser) {
+            const freshUser = users.find(u => (u.username && currentUser.username && u.username.toLowerCase() === currentUser.username.toLowerCase()) || (u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase()));
+            if (freshUser) currentUser = freshUser;
+          }
+        }
+
+        localStorage.setItem('azigizaro_inventory', JSON.stringify(inventory));
+        localStorage.setItem('azigizaro_customers', JSON.stringify(customers));
+        localStorage.setItem('azigizaro_salesLog', JSON.stringify(salesLog));
+        localStorage.setItem('azigizaro_notifications', JSON.stringify(notifications));
+        localStorage.setItem('azigizaro_users', JSON.stringify(users));
+
+        renderInventory();
+        renderCustomers();
+        renderSalesHistory();
+        renderDashboardStats();
+        renderNotifications();
+      }
+    });
+  }
+
+  // Password verification helpers
+  async function verifyAdminPass(actionCallback) {
+    const pwd = await prompt("Enter Admin Password:");
+    if (!pwd) return;
+    if (currentUser && pwd === currentUser.password) {
+      actionCallback();
+    } else {
+      await alert("Incorrect Admin Password!");
+    }
+  }
+
+  async function verifyAuthPass(actionCallback) {
+    const pwd = await prompt("Enter Password (Admin or Cashier):");
+    if (!pwd) return;
+    let isValid = false;
+    if (currentUser && pwd === currentUser.password) {
+      isValid = true;
+    } else if (currentCashier && pwd === currentCashier.password) {
+      isValid = true;
+    } else if (currentUser && currentUser.cashiers) {
+      const match = currentUser.cashiers.find(c => c.password === pwd);
+      if (match) isValid = true;
+    }
+    if (isValid) {
+      actionCallback();
+    } else {
+      await alert("Incorrect Password!");
+    }
+  }
+
+  function demoGuard(fn) {
+    if (currentUser && currentUser.isDemo) {
+      alert("This action is restricted in Free Demo Mode. Please subscribe for full access.");
+      return;
+    }
+    fn();
+  }
+
+  // Auth Functions
+  function openAuthModal(view) {
+    document.getElementById('authModal').style.display = "flex";
+    switchAuthView(view);
+  }
+
+  function closeAuthModal() {
+    document.getElementById('authModal').style.display = "none";
+  }
+
+  function switchAuthView(view) {
+    const views = ['loginForm', 'subscribeForm', 'registerForm', 'demoForm', 'forgotForm', 'faqModalView', 'feedbackModalView', 'aboutModalView', 'termsModalView', 'privacyModalView'];
+    views.forEach(v => {
+      const el = document.getElementById(v);
+      if (el) el.style.display = 'none';
+    });
+
+    const title = document.getElementById('authModalTitle');
+    const sub = document.getElementById('authSubtitle');
+
+    if (view === 'login') {
+      title.innerText = "Sign In";
+      sub.innerText = "Access your shop dashboard";
+      document.getElementById('loginForm').style.display = 'flex';
+    } else if (view === 'subscribe') {
+      title.innerText = "Subscribe";
+      sub.innerText = "Select a plan and make payment";
+      document.getElementById('subscribeForm').style.display = 'flex';
+    } else if (view === 'register') {
+      title.innerText = "Create Account";
+      sub.innerText = "Setup your store login details";
+      document.getElementById('registerForm').style.display = 'flex';
+    } else if (view === 'demo') {
+      title.innerText = "Free Demo Mode";
+      sub.innerText = "Try out basic POS features";
+      document.getElementById('demoForm').style.display = 'flex';
+    } else if (view === 'forgot') {
+      title.innerText = "Reset Password";
+      sub.innerText = "Recover your password using your security answer";
+      document.getElementById('forgotForm').style.display = 'flex';
+    } else if (view === 'faq') {
+      title.innerText = "Frequently Asked Questions";
+      sub.innerText = "Find answers to common platform queries";
+      document.getElementById('faqModalView').style.display = 'flex';
+    } else if (view === 'feedback') {
+      title.innerText = "Customer Feedback";
+      sub.innerText = "Send us your comments or feature requests";
+      document.getElementById('feedbackModalView').style.display = 'flex';
+    } else if (view === 'about') {
+      title.innerText = "About Us";
+      sub.innerText = "Learn more about Azigizaro Enterprise Suite";
+      document.getElementById('aboutModalView').style.display = 'flex';
+    } else if (view === 'terms') {
+      title.innerText = "Terms of Service";
+      sub.innerText = "Read our service terms and usage conditions";
+      document.getElementById('termsModalView').style.display = 'flex';
+    } else if (view === 'privacy') {
+      title.innerText = "Privacy Policy";
+      sub.innerText = "How we protect and manage your business data";
+      document.getElementById('privacyModalView').style.display = 'flex';
+    }
+  }
+
+  function selectPlan(amount, planType, element) {
+    selectedPlanAmount = amount;
+    selectedPlanType = planType;
+    document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('selected'));
+    element.classList.add('selected');
+    document.getElementById('payAmountDisplay').innerText = amount.toFixed(2);
+  }
+
+  function processMoMoPayment() {
+    const fullName = document.getElementById('subFullName').value.trim();
+    const email = document.getElementById('subEmail').value.trim();
+    const phone = document.getElementById('subPhone').value.trim();
+
+    if (!fullName || !email || !phone) {
+      alert("Please fill in all subscription details before proceeding.");
+      return;
+    }
+
+    const handler = PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: email,
+      amount: selectedPlanAmount * 100, // Amount in pesewas
+      currency: "GHS",
+      ref: 'AZI_' + Math.floor((Math.random() * 1000000000) + 1),
+      onClose: function() {
+        alert("Transaction was cancelled.");
+      },
+      callback: function(response) {
+        document.getElementById('paymentVerifiedBadge').style.display = "block";
+        document.getElementById('regEmail').value = email;
+        switchAuthView('register');
+      }
+    });
+
+    handler.openIframe();
+  }
+
+  function handleRegister() {
+    const shopName = document.getElementById('regShopName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const user = document.getElementById('regUser').value.trim();
+    const pass = document.getElementById('regPass').value.trim();
+    const sec = document.getElementById('regSecurity').value.trim();
+
+    if (!shopName || !email || !user || !pass || !sec) {
+      alert("Please fill in all fields to complete your registration.");
+      return;
+    }
+
+    const existing = users.find(u => (u.username && u.username.toLowerCase() === user.toLowerCase()) || (u.email && u.email.toLowerCase() === email.toLowerCase()));
+    if (existing) {
+      alert("Username or Email already exists. Please sign in or use another.");
+      return;
+    }
+
+    const newUser = {
+      username: user,
+      password: pass,
+      security: sec,
+      shopName: shopName,
+      email: email,
+      isDemo: false,
+      isPaid: true,
+      cashiers: []
+    };
+
+    users.push(newUser);
+    currentUser = newUser;
+    currentCashier = null;
+    
+    // Set user-specific database sync key
+    syncKey = user.toLowerCase();
+
+    saveData();
+    closeAuthModal();
+    initDashboard();
+    alert("Account registered successfully! You can now log into this account from any device.");
+  }
+
+  function handleCreateDemoAccount() {
+    const shopName = document.getElementById('demoShopName').value.trim() || "Demo Shop";
+    const userName = document.getElementById('demoUserName').value.trim() || "Demo User";
+
+    const demoUser = {
+      username: userName,
+      password: "123",
+      security: "demo",
+      shopName: shopName,
+      email: "demo@azigizaro.com",
+      isDemo: true,
+      isPaid: false,
+      cashiers: []
+    };
+
+    currentUser = demoUser;
+    currentCashier = null;
+    syncKey = "demo_" + userName.toLowerCase().replace(/\s+/g, '_');
+
+    // Populate standard demo items
+    inventory = [
+      { id: 1, name: "Sample Item A", price: 15.00, stock: 50, locked: false },
+      { id: 2, name: "Sample Item B", price: 25.50, stock: 20, locked: false }
+    ];
+
+    saveData();
+    closeAuthModal();
+    initDashboard();
+  }
+
+  function handleLogin() {
+    const uInput = document.getElementById('loginUser').value.trim();
+    const pInput = document.getElementById('loginPass').value.trim();
+
+    if (!uInput || !pInput) {
+      alert("Please enter both username/email and password.");
+      return;
+    }
+
+    const foundUser = users.find(u => 
+      ((u.username && u.username.toLowerCase() === uInput.toLowerCase()) || 
+       (u.email && u.email.toLowerCase() === uInput.toLowerCase())) && 
+      u.password === pInput
+    );
+
+    if (foundUser) {
+      currentUser = foundUser;
+      currentCashier = null;
+      syncKey = currentUser.username.toLowerCase();
+      saveData();
+      closeAuthModal();
+      initDashboard();
+      listenToFirebaseSync();
+      return;
+    }
+
+    // Check cashiers across accounts
+    for (let u of users) {
+      if (u.cashiers) {
+        const foundCashier = u.cashiers.find(c => c.username.toLowerCase() === uInput.toLowerCase() && c.password === pInput);
+        if (foundCashier) {
+          currentUser = u;
+          currentCashier = foundCashier;
+          syncKey = currentUser.username.toLowerCase();
+          saveData();
+          closeAuthModal();
+          initDashboard();
+          listenToFirebaseSync();
+          return;
+        }
+      }
+    }
+
+    alert("Invalid login credentials! Please check your input and try again.");
+  }
+
+  function handleGoogleSignIn() {
+    alert("Redirecting to Google Sign-In... Please complete your account setup/subscription.");
+    switchAuthView('subscribe');
+  }
+
+  function handleResetPassword() {
+    const uInput = document.getElementById('recUser').value.trim();
+    const secInput = document.getElementById('recSecurity').value.trim();
+    const newPass = document.getElementById('recNewPass').value.trim();
+
+    if (!uInput || !secInput || !newPass) {
+      alert("Please enter all recovery details.");
+      return;
+    }
+
+    const userObj = users.find(u => (u.username && u.username.toLowerCase() === uInput.toLowerCase()) || (u.email && u.email.toLowerCase() === uInput.toLowerCase()));
+    if (userObj && userObj.security.toLowerCase() === secInput.toLowerCase()) {
+      userObj.password = newPass;
+      saveData();
+      alert("Password updated successfully! Please log in with your new password.");
+      switchAuthView('login');
+    } else {
+      alert("Security answer verification failed!");
+    }
+  }
+
+  function handleLogout() {
+    currentUser = null;
+    currentCashier = null;
+    localStorage.removeItem('azigizaro_active_user');
+    localStorage.removeItem('azigizaro_active_cashier');
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+
+  // Cashier Shift & Turn-out Management
+  function createCashierAccount() {
+    const name = document.getElementById('cashierNameInput').value.trim();
+    const pass = document.getElementById('cashierPassInput').value.trim();
+
+    if (!name || !pass) {
+      alert("Please enter both Cashier Username and Password.");
+      return;
+    }
+
+    if (!currentUser.cashiers) currentUser.cashiers = [];
+    currentUser.cashiers.push({ username: name, password: pass });
+    
+    document.getElementById('cashierNameInput').value = '';
+    document.getElementById('cashierPassInput').value = '';
+    
+    saveData();
+    renderCashierList();
+    alert("Cashier account created successfully!");
+  }
+
+  function renderCashierList() {
+    const container = document.getElementById('cashierListDisplay');
+    if (!container) return;
+    if (!currentUser || !currentUser.cashiers || currentUser.cashiers.length === 0) {
+      container.innerHTML = "<p style='margin:0; color:var(--text-muted);'>No cashier accounts added.</p>";
+      return;
+    }
+
+    container.innerHTML = currentUser.cashiers.map(c => `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding:2px 0; border-bottom:1px dashed var(--border);">
+        <span>👤 ${c.username}</span>
+        <button class="btn btn-small btn-danger" onclick="deleteCashier('${c.username}')">Delete</button>
+      </div>
+    `).join('');
+  }
+
+  function deleteCashier(username) {
+    if (!currentUser || !currentUser.cashiers) return;
+    currentUser.cashiers = currentUser.cashiers.filter(c => c.username !== username);
+    saveData();
+    renderCashierList();
+  }
+
+  // Dashboard Initialization
+  function initDashboard() {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+
+    if (currentUser.isDemo) {
+      document.getElementById('demoBanner').style.display = 'flex';
+    } else {
+      document.getElementById('demoBanner').style.display = 'none';
+    }
+
+    document.getElementById('appStoreHeader').innerText = currentUser.shopName || "Azigizaro Enterprise Shop Manager Suite";
+    document.getElementById('headerUserDisplay').innerText = currentCashier ? `👤 Cashier: ${currentCashier.username}` : `👤 Admin: ${currentUser.username}`;
+    document.getElementById('accountInfoText').innerHTML = `Logged in as: <strong>${currentCashier ? currentCashier.username + ' (Cashier)' : currentUser.username + ' (Admin)'}</strong>`;
+
+    renderInventory();
+    renderCustomers();
+    renderSalesHistory();
+    renderDashboardStats();
+    renderCashierList();
+    renderNotifications();
+
+    if (syncKey) {
+      listenToFirebaseSync();
+      document.getElementById('syncBadge').className = "sync-status sync-online";
+      document.getElementById('syncBadge').innerText = "Status: Live Synced";
+    }
+  }
+
+  // Inventory Management System
+  function renderInventory() {
+    const grid = document.getElementById('productGrid');
+    const searchVal = document.getElementById('productSearch').value.toLowerCase();
+
+    // Ascending A-Z Sorting
+    const sortedItems = [...inventory].sort((a, b) => a.name.localeCompare(b.name));
+    const filtered = sortedItems.filter(item => item.name.toLowerCase().includes(searchVal));
+
+    if (filtered.length === 0) {
+      grid.innerHTML = "<p style='color: var(--text-muted); text-align: center; grid-column: 1/-1;'>No products available.</p>";
+      return;
+    }
+
+    grid.innerHTML = filtered.map(item => {
+      let badgeClass = "badge-in";
+      let badgeText = "In Stock";
+
+      if (item.stock <= 0) {
+        badgeClass = "badge-out";
+        badgeText = "Out of Stock";
+      } else if (item.stock <= 5) {
+        badgeClass = "badge-low";
+        badgeText = "Low Stock";
+      }
+
+      if (item.locked) {
+        badgeClass = "badge-locked";
+        badgeText = "🔒 LOCKED";
+      }
+
+      return `
+        <div class="product-card">
+          <div class="product-info" onclick="addToCart(${item.id})">
+            <div class="product-name">${item.name}</div>
+            <div class="product-price">${currencySymbol} ${parseFloat(item.price).toFixed(2)}</div>
+            <div class="product-stock">Stock: ${item.stock} <span class="badge ${badgeClass}">${badgeText}</span></div>
+          </div>
+          <div class="product-actions">
+            <button class="btn btn-small btn-secondary" onclick="demoGuard(() => verifyAdminPass(() => editProduct(${item.id})))">Edit</button>
+            <button class="btn btn-small btn-danger" onclick="demoGuard(() => verifyAdminPass(() => deleteProduct(${item.id})))">Delete</button>
+            <button class="btn btn-small ${item.locked ? 'btn-warning' : 'btn-secondary'}" onclick="toggleLockProduct(${item.id})">${item.locked ? 'Unlock' : 'Lock'}</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleLockProduct(id) {
+    const item = inventory.find(i => i.id === id);
+    if (item) {
+      item.locked = !item.locked;
+      saveData();
+      renderInventory();
+    }
+  }
+
+  function saveProductWithAdminPass() {
+    verifyAdminPass(() => {
+      const id = document.getElementById('editProductId').value;
+      const name = document.getElementById('pName').value.trim();
+      const price = parseFloat(document.getElementById('pPrice').value);
+      const stock = parseInt(document.getElementById('pStock').value);
+
+      if (!name || isNaN(price) || isNaN(stock)) {
+        alert("Please enter valid product details.");
+        return;
+      }
+
+      if (id) {
+        const item = inventory.find(i => i.id == id);
+        if (item) {
+          item.name = name;
+          item.price = price;
+          item.stock = stock;
+        }
+      } else {
+        inventory.push({
+          id: Date.now(),
+          name: name,
+          price: price,
+          stock: stock,
+          locked: false
+        });
+      }
+
+      saveData();
+      resetForm();
+      renderInventory();
+    });
+  }
+
+  function editProduct(id) {
+    const item = inventory.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('editProductId').value = item.id;
+    document.getElementById('pName').value = item.name;
+    document.getElementById('pPrice').value = item.price;
+    document.getElementById('pStock').value = item.stock;
+
+    document.getElementById('formTitle').innerText = "✏️ Edit Product Item";
+    document.getElementById('saveProductBtn').innerText = "Update Item";
+    document.getElementById('cancelEditBtn').style.display = "inline-block";
+  }
+
+  function resetForm() {
+    document.getElementById('editProductId').value = '';
+    document.getElementById('pName').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pStock').value = '';
+
+    document.getElementById('formTitle').innerText = "🔒➕ Add New Item";
+    document.getElementById('saveProductBtn').innerText = "Add Item";
+    document.getElementById('cancelEditBtn').style.display = "none";
+  }
+
+  function deleteProduct(id) {
+    inventory = inventory.filter(i => i.id !== id);
+    saveData();
+    renderInventory();
+  }
+
+  function clearAllStockWithAdminPass() {
+    verifyAdminPass(() => {
+      inventory = [];
+      saveData();
+      renderInventory();
+    });
+  }
+
+  // Production Stock & Inventory Actions (Admin Password Protected)
+  function adminRestockAll() {
+    verifyAdminPass(() => {
+      inventory.forEach(item => item.stock += 10);
+      saveData();
+      renderInventory();
+      alert("All items restocked by +10 units!");
+    });
+  }
+
+  async function adminBatchPriceUpdate() {
+    verifyAdminPass(async () => {
+      const percentage = await prompt("Enter percentage price increase (e.g. 5 for 5%):");
+      if (!percentage || isNaN(percentage)) return;
+
+      const factor = 1 + (parseFloat(percentage) / 100);
+      inventory.forEach(item => item.price = parseFloat((item.price * factor).toFixed(2)));
+
+      saveData();
+      renderInventory();
+      alert(`Prices updated with a ${percentage}% adjustment!`);
+    });
+  }
+
+  function adminAuditStock() {
+    verifyAdminPass(() => {
+      const modal = document.getElementById('auditReportModal');
+      const details = document.getElementById('auditReportDetails');
+
+      if (inventory.length === 0) {
+        details.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>No inventory items to audit.</p>";
+      } else {
+        details.innerHTML = `
+          <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border); color:var(--accent);">
+                <th>Item Name</th>
+                <th>Price (${currencySymbol})</th>
+                <th>Stock Qty</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${inventory.map(i => `
+                <tr style="border-bottom:1px dashed var(--border);">
+                  <td>${i.name}</td>
+                  <td>${i.price.toFixed(2)}</td>
+                  <td>${i.stock}</td>
+                  <td>${i.locked ? 'Locked' : (i.stock > 0 ? 'Active' : 'Out of Stock')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+      modal.style.display = "flex";
+    });
+  }
+
+  function closeAuditReport() {
+    document.getElementById('auditReportModal').style.display = "none";
+  }
+
+  function exportAuditReportCSV() {
+    let csv = "Item Name,Price,Stock Quantity,Locked Status\n";
+    inventory.forEach(i => {
+      csv += `"${i.name}",${i.price},${i.stock},${i.locked ? 'Yes' : 'No'}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Stock_Audit_${Date.now()}.csv`;
+    a.click();
+  }
+
+  // Cart & POS Checkout System
+  function addToCart(productId) {
+    const item = inventory.find(i => i.id === productId);
+    if (!item) return;
+
+    if (item.locked) {
+      alert("This item is currently locked and cannot be added to cart or checked out.");
+      return;
+    }
+
+    if (item.stock <= 0) {
+      alert("Item is out of stock!");
+      return;
+    }
+
+    const existingCartItem = cart.find(c => c.id === productId);
+    if (existingCartItem) {
+      if (existingCartItem.qty >= item.stock) {
+        alert("Cannot add more than available stock limit!");
+        return;
+      }
+      existingCartItem.qty += 1;
+    } else {
+      cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+    }
+
+    renderCart();
+  }
+
+  function renderCart() {
+    const list = document.getElementById('cartList');
+    if (cart.length === 0) {
+      list.innerHTML = "<p style='color: var(--text-muted); text-align: center; font-size: 0.8rem;'>Cart is empty.</p>";
+      renderCartSummary();
+      return;
+    }
+
+    list.innerHTML = cart.map(item => `
+      <li class="cart-item">
+        <div>
+          <div><strong>${item.name}</strong></div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${currencySymbol} ${item.price.toFixed(2)} x ${item.qty}</div>
+        </div>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button class="btn btn-small btn-secondary" onclick="updateCartQty(${item.id}, -1)">-</button>
+          <span>${item.qty}</span>
+          <button class="btn btn-small btn-secondary" onclick="updateCartQty(${item.id}, 1)">+</button>
+          <button class="btn btn-small btn-danger" onclick="removeFromCart(${item.id})">&times;</button>
+        </div>
+      </li>
+    `).join('');
+
+    renderCartSummary();
+  }
+
+  function updateCartQty(id, change) {
+    const cartItem = cart.find(c => c.id === id);
+    const invItem = inventory.find(i => i.id === id);
+
+    if (cartItem && invItem) {
+      if (change > 0 && cartItem.qty >= invItem.stock) {
+        alert("Stock limit reached!");
+        return;
+      }
+      cartItem.qty += change;
+      if (cartItem.qty <= 0) {
+        removeFromCart(id);
+      } else {
+        renderCart();
+      }
+    }
+  }
+
+  function removeFromCart(id) {
+    cart = cart.filter(c => c.id !== id);
+    renderCart();
+  }
+
+  function clearCart() {
+    cart = [];
+    renderCart();
+  }
+
+  function calculateCartTotals() {
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const taxPercent = parseFloat(document.getElementById('cartTaxPercent').value) || 0;
+    const taxAmount = (subtotal * taxPercent) / 100;
+    const total = subtotal + taxAmount;
+    const tendered = parseFloat(document.getElementById('cartAmountTendered').value) || 0;
+    const change = Math.max(0, tendered - total);
+
+    return { subtotal, taxAmount, total, tendered, change };
+  }
+
+  function renderCartSummary() {
+    const { subtotal, taxAmount, total, tendered, change } = calculateCartTotals();
+
+    document.getElementById('cartSubtotalDisplay').innerText = `${currencySymbol} ${subtotal.toFixed(2)}`;
+    document.getElementById('cartTaxAmountDisplay').innerText = `${currencySymbol} ${taxAmount.toFixed(2)}`;
+    document.getElementById('cartTotalDisplay').innerText = `${currencySymbol} ${total.toFixed(2)}`;
+    document.getElementById('cartChangeDisplay').innerText = `${currencySymbol} ${change.toFixed(2)}`;
+  }
+
+  function toggleMomoNetworkField() {
+    const method = document.getElementById('cartPaymentMethod').value;
+    const wrapper = document.getElementById('cartMomoNetworkWrapper');
+    if (method === "Mobile Money") {
+      wrapper.style.display = "block";
+    } else {
+      wrapper.style.display = "none";
+    }
+  }
+
+  function openCheckoutConfirmation() {
+    if (cart.length === 0) {
+      alert("Cart is empty! Add products before checking out.");
+      return;
+    }
+
+    const { subtotal, taxAmount, total, tendered, change } = calculateCartTotals();
+
+    // Tendered Amount Confirmation Guard
+    if (tendered < total) {
+      alert(`Tendered amount (${currencySymbol} ${tendered.toFixed(2)}) is less than total amount due (${currencySymbol} ${total.toFixed(2)})! Please verify tendered amount.`);
+      return;
+    }
+
+    const custSel = document.getElementById('cartCustomer');
+    const custName = custSel.options[custSel.selectedIndex]?.text || "Walk-in Customer";
+    const paymentMethod = document.getElementById('cartPaymentMethod').value;
+
+    document.getElementById('confirmCustomerName').innerText = custName;
+    document.getElementById('confirmPaymentMethod').innerText = paymentMethod;
+    document.getElementById('confirmSubtotal').innerText = `${currencySymbol} ${subtotal.toFixed(2)}`;
+    document.getElementById('confirmTax').innerText = `${currencySymbol} ${taxAmount.toFixed(2)}`;
+    document.getElementById('confirmTotal').innerText = `${currencySymbol} ${total.toFixed(2)}`;
+    document.getElementById('confirmTendered').innerText = `${currencySymbol} ${tendered.toFixed(2)}`;
+    document.getElementById('confirmChange').innerText = `${currencySymbol} ${change.toFixed(2)}`;
+
+    const details = document.getElementById('confirmOrderDetails');
+    details.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border); color:var(--text-muted);">
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${cart.map(i => `
+            <tr style="border-bottom:1px dashed var(--border);">
+              <td>${i.name}</td>
+              <td>${i.qty}</td>
+              <td>${i.price.toFixed(2)}</td>
+              <td>${(i.price * i.qty).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    document.getElementById('checkoutConfirmModal').style.display = "flex";
+  }
+
+  function closeCheckoutConfirmation() {
+    document.getElementById('checkoutConfirmModal').style.display = "none";
+  }
+
+  function processCheckout() {
+    const { subtotal, taxAmount, total, tendered, change } = calculateCartTotals();
+    const custSel = document.getElementById('cartCustomer');
+    const customerName = custSel.options[custSel.selectedIndex]?.text || "Walk-in Customer";
+    const paymentMethod = document.getElementById('cartPaymentMethod').value;
+
+    // Deplete stock
+    cart.forEach(cartItem => {
+      const invItem = inventory.find(i => i.id === cartItem.id);
+      if (invItem) {
+        invItem.stock -= cartItem.qty;
+      }
+    });
+
+    const txnSerial = "AZI-" + receiptSerialCounter++;
+    const cashierNameStr = currentCashier ? currentCashier.username : currentUser.username;
+
+    const saleRecord = {
+      id: Date.now(),
+      serial: txnSerial,
+      date: new Date().toISOString(),
+      customer: customerName,
+      paymentMethod: paymentMethod,
+      items: [...cart],
+      subtotal: subtotal,
+      tax: taxAmount,
+      total: total,
+      tendered: tendered,
+      change: change,
+      cashier: cashierNameStr
+    };
+
+    salesLog.unshift(saleRecord);
+    
+    // Add activity notification
+    notifications.unshift({
+      id: Date.now(),
+      text: `Sale completed: ${txnSerial} - ${currencySymbol} ${total.toFixed(2)} (${paymentMethod})`
+    });
+
+    saveData();
+    closeCheckoutConfirmation();
+    showReceiptModal(saleRecord);
+
+    cart = [];
+    document.getElementById('cartAmountTendered').value = '';
+    renderCart();
+    renderInventory();
+    renderSalesHistory();
+    renderDashboardStats();
+    renderNotifications();
+  }
+
+  // Customers Management
+  function addCustomer() {
+    const name = document.getElementById('cName').value.trim();
+    const phone = document.getElementById('cPhone').value.trim();
+
+    if (!name) {
+      alert("Please enter customer name.");
+      return;
+    }
+
+    customers.push({ id: Date.now(), name, phone });
+    document.getElementById('cName').value = '';
+    document.getElementById('cPhone').value = '';
+
+    saveData();
+    renderCustomers();
+  }
+
+  function renderCustomers() {
+    const list = document.getElementById('custList');
+    const select = document.getElementById('cartCustomer');
+
+    select.innerHTML = `<option value="">Walk-in Customer</option>`;
+    if (customers.length === 0) {
+      list.innerHTML = "<p style='color:var(--text-muted); font-size:0.8rem; text-align:center;'>No registered customers.</p>";
+      return;
+    }
+
+    list.innerHTML = customers.map(c => `
+      <li class="cust-item">
+        <span><strong>${c.name}</strong> (${c.phone || 'No phone'})</span>
+        <button class="btn btn-small btn-danger" onclick="deleteCustomer(${c.id})">&times;</button>
+      </li>
+    `).join('');
+
+    customers.forEach(c => {
+      select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+    });
+  }
+
+  function deleteCustomer(id) {
+    customers = customers.filter(c => c.id !== id);
+    saveData();
+    renderCustomers();
+  }
+
+  // Sales Log & Daily History Grouping
+  function renderSalesHistory() {
+    const container = document.getElementById('salesHistory');
+    const filter = document.getElementById('txnHistoryFilter').value;
+
+    let filtered = salesLog;
+    if (filter === 'Cash') filtered = salesLog.filter(s => s.paymentMethod === 'Physical Cash');
+    if (filter === 'MoMo') filtered = salesLog.filter(s => s.paymentMethod === 'Mobile Money');
+
+    if (filtered.length === 0) {
+      container.innerHTML = "<p style='color:var(--text-muted); font-size:0.8rem; text-align:center;'>No transaction history.</p>";
+      return;
+    }
+
+    // Group by Date String
+    const grouped = {};
+    filtered.forEach(s => {
+      const day = new Date(s.date).toLocaleDateString();
+      if (!grouped[day]) grouped[day] = [];
+      grouped[day].push(s);
+    });
+
+    container.innerHTML = Object.keys(grouped).map(day => {
+      const dayTotal = grouped[day].reduce((sum, s) => sum + s.total, 0);
+      return `
+        <div class="day-group">
+          <div class="day-header" onclick="toggleDayTxns(this)">
+            <span>📅 ${day} (${grouped[day].length} sales)</span>
+            <span>${currencySymbol} ${dayTotal.toFixed(2)} ▼</span>
+          </div>
+          <div class="day-txns">
+            ${grouped[day].map(s => `
+              <div class="sales-item">
+                <div>
+                  <div><strong>${s.serial}</strong> - ${s.customer}</div>
+                  <div style="font-size:0.72rem;">${new Date(s.date).toLocaleTimeString()} | ${s.paymentMethod}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="color:var(--accent); font-weight:bold;">${currencySymbol} ${s.total.toFixed(2)}</div>
+                  <button class="btn btn-small btn-secondary" onclick="reprintReceipt('${s.serial}')">Receipt</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleDayTxns(el) {
+    const txnsDiv = el.nextElementSibling;
+    if (txnsDiv) {
+      txnsDiv.classList.toggle('open');
+    }
+  }
+
+  function renderDashboardStats() {
+    const todayStr = new Date().toLocaleDateString();
+    const todaySales = salesLog.filter(s => new Date(s.date).toLocaleDateString() === todayStr);
+
+    const totalRev = todaySales.reduce((sum, s) => sum + s.total, 0);
+    const cashRev = todaySales.filter(s => s.paymentMethod === 'Physical Cash').reduce((sum, s) => sum + s.total, 0);
+    const momoRev = todaySales.filter(s => s.paymentMethod === 'Mobile Money').reduce((sum, s) => sum + s.total, 0);
+    const itemsCount = todaySales.reduce((sum, s) => sum + s.items.reduce((iSum, item) => iSum + item.qty, 0), 0);
+
+    document.getElementById('totalRevenue').innerText = `${currencySymbol} ${totalRev.toFixed(2)}`;
+    document.getElementById('cashBalance').innerText = `${currencySymbol} ${cashRev.toFixed(2)}`;
+    document.getElementById('momoBalance').innerText = `${currencySymbol} ${momoRev.toFixed(2)}`;
+    document.getElementById('itemsSold').innerText = itemsCount;
+  }
+
+  // Receipt Generation & Printing System
+  function showReceiptModal(sale) {
+    document.getElementById('receiptStoreName').innerText = currentUser.shopName || "AZIGIZARO ENTERPRISE";
+    document.getElementById('rStoreAddress').innerText = shopAddress;
+    document.getElementById('rStorePhone').innerText = "Tel: " + shopPhone;
+    document.getElementById('rCashierName').innerText = "Cashier: " + (sale.cashier || "Admin");
+    document.getElementById('rDate').innerText = "Date: " + new Date(sale.date).toLocaleString();
+    document.getElementById('rCustomer').innerText = "Customer: " + sale.customer;
+    document.getElementById('rPaymentMethod').innerText = "Method: " + sale.paymentMethod;
+    document.getElementById('rSerial').innerText = "Receipt #: " + sale.serial;
+    document.getElementById('rTransactionId').innerText = "Txn ID: " + sale.id;
+
+    const logoImg = document.getElementById('receiptLogoImg');
+    if (shopLogoData) {
+      logoImg.src = shopLogoData;
+      logoImg.style.display = "block";
+    } else {
+      logoImg.style.display = "none";
+    }
+
+    const itemsContainer = document.getElementById('rItems');
+    itemsContainer.innerHTML = `
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sale.items.map(i => `
+            <tr>
+              <td>${i.name}</td>
+              <td>${i.qty}</td>
+              <td>${i.price.toFixed(2)}</td>
+              <td>${(i.price * i.qty).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    document.getElementById('rSubtotal').innerText = `${currencySymbol} ${sale.subtotal.toFixed(2)}`;
+    document.getElementById('rTax').innerText = `${currencySymbol} ${sale.tax.toFixed(2)}`;
+    document.getElementById('rTotal').innerText = `${currencySymbol} ${sale.total.toFixed(2)}`;
+    document.getElementById('rTendered').innerText = `${currencySymbol} ${sale.tendered.toFixed(2)}`;
+    document.getElementById('rChange').innerText = `${currencySymbol} ${sale.change.toFixed(2)}`;
+
+    JsBarcode("#receiptBarcode", sale.serial, {
+      format: "CODE128",
+      width: 1.5,
+      height: 40,
+      displayValue: true,
+      fontSize: 10
+    });
+
+    document.getElementById('receiptModal').style.display = "flex";
+  }
+
+  function closeReceipt() {
+    document.getElementById('receiptModal').style.display = "none";
+  }
+
+  function reprintReceipt(serial) {
+    const sale = salesLog.find(s => s.serial === serial);
+    if (sale) {
+      showReceiptModal(sale);
+    }
+  }
+
+  function printReceiptDirect() {
+    window.print();
+  }
+
+  function saveReceiptPDF() {
+    const element = document.getElementById('receiptContainer');
+    const opt = {
+      margin:       0.2,
+      filename:     `Receipt_${Date.now()}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'a6', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  }
+
+  // Sidebar Controls & Settings Modals
+  function toggleSidebar(show) {
+    const overlay = document.getElementById('sidebarOverlay');
+    const drawer = document.getElementById('sidebarDrawer');
+
+    if (show) {
+      overlay.classList.add('open');
+      drawer.classList.add('open');
+    } else {
+      overlay.classList.remove('open');
+      drawer.classList.remove('open');
+    }
+  }
+
+  function renameStore() {
+    verifyAuthPass(async () => {
+      const newName = await prompt("Enter new store name:", currentUser.shopName);
+      if (newName) {
+        currentUser.shopName = newName;
+        saveData();
+        document.getElementById('appStoreHeader').innerText = newName;
+        alert("Store renamed successfully!");
+      }
+    });
+  }
+
+  function deleteStore() {
+    verifyAdminPass(async () => {
+      const conf = await confirm("Are you sure you want to delete all sales and inventory for this store?");
+      if (conf) {
+        inventory = [];
+        salesLog = [];
+        saveData();
+        renderInventory();
+        renderSalesHistory();
+        renderDashboardStats();
+        alert("Store data wiped.");
+      }
+    });
+  }
+
+  function deleteAccountPermanent() {
+    verifyAdminPass(async () => {
+      const conf = await confirm("WARNING: This will permanently delete your user account and all stored business records!");
+      if (conf) {
+        users = users.filter(u => u.username !== currentUser.username);
+        saveData();
+        handleLogout();
+      }
+    });
+  }
+
+  function changeUsername() {
+    verifyAuthPass(async () => {
+      const newU = await prompt("Enter new username:", currentUser.username);
+      if (newU) {
+        currentUser.username = newU;
+        saveData();
+        initDashboard();
+        alert("Username updated successfully!");
+      }
+    });
+  }
+
+  function changeUserPassword() {
+    verifyAuthPass(async () => {
+      const newP = await prompt("Enter new password:");
+      if (newP) {
+        currentUser.password = newP;
+        saveData();
+        alert("Password updated successfully!");
+      }
+    });
+  }
+
+  function handleLogoUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        shopLogoData = evt.target.result;
+        saveData();
+        const logo = document.getElementById('appShopLogo');
+        logo.src = shopLogoData;
+        logo.style.display = "block";
+        alert("Logo uploaded!");
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function removeShopLogo() {
+    shopLogoData = "";
+    saveData();
+    document.getElementById('appShopLogo').style.display = "none";
+    alert("Logo removed.");
+  }
+
+  function updateCurrencySetting() {
+    currencySymbol = document.getElementById('currencySelector').value;
+    saveData();
+    renderInventory();
+    renderCartSummary();
+    renderSalesHistory();
+    renderDashboardStats();
+  }
+
+  function updateShopInfoSetting() {
+    shopAddress = document.getElementById('settingShopAddress').value;
+    shopPhone = document.getElementById('settingShopPhone').value;
+    saveData();
+  }
+
+  function connectLiveSyncWithPin() {
+    const key = document.getElementById('syncKeyInput').value.trim();
+    if (!key) {
+      alert("Please enter a Sync Key.");
+      return;
+    }
+    syncKey = key;
+    saveData();
+    listenToFirebaseSync();
+    document.getElementById('syncBadge').className = "sync-status sync-online";
+    document.getElementById('syncBadge').innerText = "Status: Live Synced (" + key + ")";
+    alert("Live Sync Connected!");
+  }
+
+  function disconnectLiveSync() {
+    syncKey = '';
+    saveData();
+    document.getElementById('syncBadge').className = "sync-status sync-offline";
+    document.getElementById('syncBadge').innerText = "Status: Offline / Local";
+    alert("Live Sync Disconnected.");
+  }
+
+  function changeSecurityPin() {
+    verifyAdminPass(async () => {
+      const newCode = await prompt("Enter new 4-digit admin security code:", securityPin);
+      if (newCode) {
+        securityPin = newCode;
+        saveData();
+        alert("Security code updated!");
+      }
+    });
+  }
+
+  function toggleResetLock() {
+    verifyAdminPass(() => {
+      isResetModeEnabled = !isResetModeEnabled;
+      document.getElementById('clearAllDataBtn').disabled = !isResetModeEnabled;
+      document.getElementById('toggleResetBtn').innerText = isResetModeEnabled ? "Disable Reset Mode" : "Enable Reset Mode";
+    });
+  }
+
+  function clearAllData() {
+    verifyAdminPass(async () => {
+      const conf = await confirm("CRITICAL WARNING: This will erase ALL local inventory, transactions, and settings!");
+      if (conf) {
+        localStorage.clear();
+        location.reload();
+      }
+    });
+  }
+
+  function exportFullJSON() {
+    const data = {
+      inventory, customers, salesLog, notifications, shopLogoData, securityPin, currencySymbol, shopAddress, shopPhone, users
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Azigizaro_Backup_${Date.now()}.json`;
+    a.click();
+  }
+
+  function triggerImportJSON() {
+    document.getElementById('importJsonInput').click();
+  }
+
+  function importFullJSON(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed.inventory) inventory = parsed.inventory;
+          if (parsed.customers) customers = parsed.customers;
+          if (parsed.salesLog) salesLog = parsed.salesLog;
+          if (parsed.users) users = parsed.users;
+          saveData();
+          initDashboard();
+          alert("Backup data imported successfully!");
+        } catch(err) {
+          alert("Invalid backup file format!");
+        }
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  function exportCSV(type) {
+    let filtered = salesLog;
+    if (type === 'Cash') filtered = salesLog.filter(s => s.paymentMethod === 'Physical Cash');
+    if (type === 'MoMo') filtered = salesLog.filter(s => s.paymentMethod === 'Mobile Money');
+
+    let csv = "Serial,Date,Customer,Payment Method,Subtotal,Tax,Total,Cashier\n";
+    filtered.forEach(s => {
+      csv += `"${s.serial}","${s.date}","${s.customer}","${s.paymentMethod}",${s.subtotal},${s.tax},${s.total},"${s.cashier}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Sales_Log_${type}_${Date.now()}.csv`;
+    a.click();
+  }
+
+  // Notifications Log
+  function toggleNotificationsModal() {
+    const m = document.getElementById('notificationsModal');
+    m.style.display = m.style.display === "flex" ? "none" : "flex";
+  }
+
+  function renderNotifications() {
+    const list = document.getElementById('notificationsList');
+    const badge = document.getElementById('notificationBadge');
+
+    badge.innerText = notifications.length;
+    badge.style.display = notifications.length > 0 ? "inline-block" : "none";
+
+    if (notifications.length === 0) {
+      list.innerHTML = `<p style="color:var(--text-muted); text-align:center;">No recent dashboard changes.</p>`;
+      return;
+    }
+
+    list.innerHTML = notifications.map(n => `
+      <div style="background:#0f172a; padding:8px; border-radius:6px; border:1px solid var(--border);">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block;">${new Date(n.id).toLocaleString()}</span>
+        ${n.text}
+      </div>
+    `).join('');
+  }
+
+  function clearNotifications() {
+    notifications = [];
+    saveData();
+    renderNotifications();
+  }
+
+  function toggleFaq(el) {
+    const ans = el.nextElementSibling;
+    if (ans) {
+      const isVisible = ans.style.display === "block";
+      ans.style.display = isVisible ? "none" : "block";
+      el.querySelector('span').innerText = isVisible ? "+" : "-";
+    }
+  }
+
+  function handleNewsletterSubmit(e) {
+    e.preventDefault();
+    document.getElementById('newsletterMsg').style.display = "block";
+    document.getElementById('newsletterMsg').innerText = "Thank you for subscribing!";
+    document.getElementById('newsletterEmail').value = "";
+  }
+
+  // Initialize on Load
+  window.onload = function() {
+    document.getElementById('footerYear').innerText = new Date().getFullYear();
+
+    if (currentUser) {
+      syncKey = currentUser.username.toLowerCase();
+      initDashboard();
+    }
+  };
+</script>
+
+</body>
+</html>
